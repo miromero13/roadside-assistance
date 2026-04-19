@@ -1,10 +1,12 @@
-# app/schemas/enums.py
 from enum import Enum
 
-class UserTypeEnum(str, Enum):
-    hearing = "hearing"
-    deaf_mute = "deaf_mute"
 
-class GenderEnum(str, Enum):
-    male = "male"
-    female = "female"
+class RolUsuarioEnum(str, Enum):
+    conductor = "conductor"
+    taller = "taller"
+    mecanico = "mecanico"
+    admin = "admin"
+
+
+# Alias de compatibilidad temporal
+UserTypeEnum = RolUsuarioEnum

@@ -1,23 +1,34 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from app.schemas.user_schema import UserCreate, UserRead, UserLogin, UserOut
-from app.models.user import User
+from app.schemas.user_schema import UsuarioCrear, UsuarioLogin, UsuarioRead, UsuarioRegistroConductor
+from app.models.enums import UserRole
+from app.models.usuario import Usuario
 from app.core.database import get_db
 from app.auth.hash import verify_password
 from app.auth.jwt import create_access_token
 from app.services.user_service import create_user
-from app.utils.response import response
 
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
 @router.post("/register")
-def register(user: UserCreate, db: Session = Depends(get_db)):
-    db_user = create_user(db, user)
+def register(usuario: UsuarioRegistroConductor, db: Session = Depends(get_db)):
+    nuevo_usuario = UsuarioCrear(
+        nombre=usuario.nombre,
+        apellido=usuario.apellido,
+        email=usuario.email,
+        telefono=usuario.telefono,
+        password=usuario.password,
+        rol=UserRole.CONDUCTOR,
+    )
+    try:
+        db_user = create_user(db, nuevo_usuario)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
     access_token = create_access_token(data={"sub": str(db_user.id)})
 
-    user_data = UserRead.model_validate(db_user).model_dump()
+    user_data = UsuarioRead.model_validate(db_user).model_dump()
 
     return {
         "access_token": access_token,
@@ -26,12 +37,13 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     }
 
 @router.post("/login")
-def login(user_data: UserLogin, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == user_data.email).first()
-    if not user or not verify_password(user_data.password, user.hashed_password):
+def login(user_data: UsuarioLogin, db: Session = Depends(get_db)):
+    user = db.query(Usuario).filter(Usuario.email == user_data.email).first()
+    if not user or not verify_password(user_data.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Credenciales incorrectas"
         )
     access_token = create_access_token(data={"sub": str(user.id)})
-    return {"access_token": access_token, "token_type": "bearer", "user": user}
+    usuario_data = UsuarioRead.model_validate(user).model_dump()
+    return {"access_token": access_token, "token_type": "bearer", "user": usuario_data}

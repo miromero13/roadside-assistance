@@ -1,48 +1,58 @@
-from pydantic import BaseModel, EmailStr
 from typing import List
 from uuid import UUID
-from app.schemas.enums import UserTypeEnum, GenderEnum
 
-#  Para registro
-class UserCreate(BaseModel):
-    name: str
+from pydantic import BaseModel, EmailStr
+
+from app.models.enums import UserRole
+
+
+class UsuarioCrear(BaseModel):
+    nombre: str
+    apellido: str
+    email: EmailStr
+    telefono: str
+    password: str
+    rol: UserRole
+
+
+class UsuarioRegistroConductor(BaseModel):
+    nombre: str
+    apellido: str
+    email: EmailStr
+    telefono: str
+    password: str
+
+
+class UsuarioLogin(BaseModel):
     email: EmailStr
     password: str
-    gender: GenderEnum
-    user_type: UserTypeEnum
-
-#  Para login
-class UserLogin(BaseModel):
-    email: EmailStr
-    password: str
-
-#  Para leer usuario en respuestas (registro, perfil)
-class UserOut(BaseModel):
-    id: UUID 
-    name: str
-    email: EmailStr
-    gender: GenderEnum
-    user_type: UserTypeEnum
 
 
-    class Config:
-        from_attributes = True
-
-#  Para paginación de usuarios (si aplicas en /users)
-class UserRead(BaseModel):
+class UsuarioRead(BaseModel):
     id: UUID
-    name: str
+    nombre: str
+    apellido: str
     email: EmailStr
-    gender: GenderEnum
-    user_type: UserTypeEnum
+    telefono: str
+    rol: UserRole
+    activo: bool
 
-    model_config = {
-        "from_attributes": True
-    }
+    model_config = {"from_attributes": True}
 
-class UsersPaginatedResponse(BaseModel):
-    data: List[UserRead]
+
+class UsuariosPaginadosResponse(BaseModel):
+    data: List[UsuarioRead]
     countData: int
-    
-class UserUpdateType(BaseModel):
-    user_type: UserTypeEnum
+
+
+class UsuarioActualizarRol(BaseModel):
+    rol: UserRole
+
+
+# Alias de compatibilidad temporal
+UserCreate = UsuarioCrear
+UserLogin = UsuarioLogin
+UserRead = UsuarioRead
+UserOut = UsuarioRead
+UsersPaginatedResponse = UsuariosPaginadosResponse
+UserUpdateType = UsuarioActualizarRol

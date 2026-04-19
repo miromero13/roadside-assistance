@@ -1,0 +1,1301 @@
+{
+  "info": {
+    "name": "ACI Backend - Coleccion Completa",
+    "description": "Coleccion amplia para probar endpoints del backend FastAPI (/api). Incluye auth, gestion, usuarios, vehiculos, averias, ordenes, asignaciones, presupuestos, pagos, comisiones, facturas, notificaciones, chat, operacion, disponibilidad, catalogo, push y metricas.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8000/api" },
+
+    { "key": "admin_email", "value": "admin@aci.com" },
+    { "key": "admin_password", "value": "Admin123!" },
+    { "key": "conductor_email", "value": "conductor@aci.com" },
+    { "key": "conductor_password", "value": "Conductor123!" },
+    { "key": "taller_email", "value": "taller@aci.com" },
+    { "key": "taller_password", "value": "Taller123!" },
+    { "key": "mecanico_email", "value": "mecanico@aci.com" },
+    { "key": "mecanico_password", "value": "Mecanico123!" },
+
+    { "key": "admin_token", "value": "" },
+    { "key": "conductor_token", "value": "" },
+    { "key": "taller_token", "value": "" },
+    { "key": "mecanico_token", "value": "" },
+
+    { "key": "registro_user_id", "value": "" },
+    { "key": "current_user_id", "value": "" },
+
+    { "key": "categoria_id", "value": "5db001c7-8acb-4ac9-bb54-552545690cb9" },
+    { "key": "taller_creado_id", "value": "" },
+    { "key": "taller_id", "value": "2733c28f-02fa-4ad9-b056-01ffc929d6fa" },
+    { "key": "mecanico_id", "value": "c607c1a9-6764-48ea-9eeb-b7fea0044bb1" },
+    { "key": "servicio_taller_id", "value": "" },
+
+    { "key": "vehiculo_id", "value": "" },
+    { "key": "averia_id", "value": "" },
+    { "key": "orden_id", "value": "" },
+    { "key": "orden_cancelar_id", "value": "" },
+    { "key": "asignacion_id", "value": "" },
+    { "key": "presupuesto_id", "value": "" },
+    { "key": "pago_id", "value": "" },
+    { "key": "factura_id", "value": "" },
+
+    { "key": "chat_id", "value": "" },
+    { "key": "mensaje_id", "value": "" },
+    { "key": "notificacion_id", "value": "" },
+
+    { "key": "horario_id", "value": "" },
+    { "key": "bloqueo_id", "value": "" },
+    { "key": "dispositivo_id", "value": "" },
+
+    { "key": "pago_monto", "value": "250.00" }
+  ],
+  "item": [
+    {
+      "name": "00 Auth",
+      "item": [
+        {
+          "name": "Auth Register Conductor",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Conductor\",\n  \"apellido\": \"Nuevo\",\n  \"email\": \"conductor+{{$timestamp}}@aci.com\",\n  \"telefono\": \"70009999\",\n  \"password\": \"Conductor123!\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('registro_user_id', json.user?.id || '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Auth Login Admin",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{admin_email}}\",\n  \"password\": \"{{admin_password}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('admin_token', json.access_token || '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Auth Login Conductor",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{conductor_email}}\",\n  \"password\": \"{{conductor_password}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('conductor_token', json.access_token || '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Auth Login Taller",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{taller_email}}\",\n  \"password\": \"{{taller_password}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('taller_token', json.access_token || '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Auth Login Mecanico",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{mecanico_email}}\",\n  \"password\": \"{{mecanico_password}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('mecanico_token', json.access_token || '');"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "01 Gestion y Usuarios",
+      "item": [
+        {
+          "name": "Users Me",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{conductor_token}}" }],
+            "url": "{{base_url}}/users/me"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('current_user_id', json.data?.id || '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Users List (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": "{{base_url}}/users/?skip=0&limit=20"
+          }
+        },
+        {
+          "name": "Users Get By Id",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": "{{base_url}}/users/{{current_user_id}}"
+          }
+        },
+        {
+          "name": "Users Create (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/users/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Soporte\",\n  \"apellido\": \"Demo\",\n  \"email\": \"soporte+{{$timestamp}}@aci.com\",\n  \"telefono\": \"70008888\",\n  \"password\": \"Soporte123!\",\n  \"rol\": \"conductor\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Users Update Rol",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/users/{{registro_user_id}}/rol",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rol\": \"conductor\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Gestion Crear Categoria Servicio",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/gestion/categorias-servicio",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Categoria {{$timestamp}}\",\n  \"descripcion\": \"Categoria creada desde Postman\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Gestion Crear Taller (Admin, opcional)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/gestion/talleres",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre_admin\": \"Taller\",\n  \"apellido_admin\": \"Nuevo\",\n  \"email_admin\": \"taller+{{$timestamp}}@aci.com\",\n  \"telefono_admin\": \"70006666\",\n  \"password_admin\": \"Taller123!\",\n  \"nombre_taller\": \"Taller Postman {{$timestamp}}\",\n  \"descripcion\": \"Taller creado desde coleccion\",\n  \"direccion\": \"Av Siempre Viva 123\",\n  \"latitud\": -16.5,\n  \"longitud\": -68.15,\n  \"radio_cobertura_km\": 8,\n  \"telefono_taller\": \"72000009\",\n  \"acepta_domicilio\": true\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('taller_creado_id', json.data?.taller?.id || '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Gestion Crear Mecanico (Taller)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{taller_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/gestion/mecanicos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Mec\",\n  \"apellido\": \"Postman\",\n  \"email\": \"mec+{{$timestamp}}@aci.com\",\n  \"telefono\": \"70007777\",\n  \"password\": \"Mecanico123!\",\n  \"especialidad\": \"Diagnostico\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('mecanico_id', json.data?.mecanico?.id || pm.collectionVariables.get('mecanico_id'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 Catalogo y Taller",
+      "item": [
+        {
+          "name": "Categorias Servicio List",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/categorias-servicio?activo=true"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const rows = json.data || [];",
+                  "if (rows.length > 0) pm.collectionVariables.set('categoria_id', rows[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Categorias Servicio Update (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/categorias-servicio/{{categoria_id}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"descripcion\": \"Actualizada desde coleccion\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Taller Get Public",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/talleres/{{taller_id}}"
+          }
+        },
+        {
+          "name": "Taller Update",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{taller_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/talleres/{{taller_id}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"descripcion\": \"Taller actualizado desde Postman\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Servicio Taller Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{taller_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/talleres/{{taller_id}}/servicios",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoria_id\": \"{{categoria_id}}\",\n  \"descripcion\": \"Servicio movil demo\",\n  \"precio_base_min\": 80,\n  \"precio_base_max\": 200,\n  \"tiempo_estimado_min\": 45,\n  \"servicio_movil\": true\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('servicio_taller_id', json.data?.id || '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Servicio Taller List",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/talleres/{{taller_id}}/servicios?solo_activos=true"
+          }
+        },
+        {
+          "name": "Servicio Taller Update",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{taller_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/servicios-taller/{{servicio_taller_id}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"precio_base_max\": 230,\n  \"servicio_movil\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "Servicio Taller Delete (soft)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{taller_token}}" }],
+            "url": "{{base_url}}/servicios-taller/{{servicio_taller_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 Vehiculos y Averias",
+      "item": [
+        {
+          "name": "Vehiculo Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{conductor_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/vehiculos/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"marca\": \"Kia\",\n  \"modelo\": \"Rio\",\n  \"anio\": 2021,\n  \"placa\": \"Z{{$timestamp}}\",\n  \"color\": \"Rojo\",\n  \"tipo_combustible\": \"gasolina\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('vehiculo_id', json.data?.id || '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Vehiculo List",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{conductor_token}}" }],
+            "url": "{{base_url}}/vehiculos/"
+          }
+        },
+        {
+          "name": "Vehiculo Get",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{conductor_token}}" }],
+            "url": "{{base_url}}/vehiculos/{{vehiculo_id}}"
+          }
+        },
+        {
+          "name": "Vehiculo Update",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{conductor_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/vehiculos/{{vehiculo_id}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"color\": \"Azul\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Averia Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{conductor_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/averias/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehiculo_id\": \"{{vehiculo_id}}\",\n  \"descripcion_conductor\": \"No enciende el motor\",\n  \"latitud_averia\": -16.505,\n  \"longitud_averia\": -68.155,\n  \"direccion_averia\": \"Zona Sur\",\n  \"prioridad\": \"media\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('averia_id', json.data?.id || '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Averia List (Conductor)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{conductor_token}}" }],
+            "url": "{{base_url}}/averias/"
+          }
+        },
+        {
+          "name": "Averia Get",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{conductor_token}}" }],
+            "url": "{{base_url}}/averias/{{averia_id}}"
+          }
+        },
+        {
+          "name": "Averia Add Medio",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{conductor_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/averias/{{averia_id}}/medios",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"foto\",\n  \"url\": \"https://example.com/foto-averia.jpg\",\n  \"orden_visualizacion\": 1\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 Ordenes, Asignaciones y Presupuestos",
+      "item": [
+        {
+          "name": "Talleres Candidatos",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{conductor_token}}" }],
+            "url": "{{base_url}}/talleres/candidatos?averia_id={{averia_id}}&categoria_id={{categoria_id}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const rows = json.data || [];",
+                  "if (rows.length > 0) pm.collectionVariables.set('taller_id', rows[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Orden Create Manual",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{conductor_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/ordenes/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"averia_id\": \"{{averia_id}}\",\n  \"taller_id\": \"{{taller_id}}\",\n  \"categoria_id\": \"{{categoria_id}}\",\n  \"es_domicilio\": true,\n  \"notas_conductor\": \"Necesito ayuda urgente\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('orden_id', json.data?.id || '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ordenes List",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{conductor_token}}" }],
+            "url": "{{base_url}}/ordenes/"
+          }
+        },
+        {
+          "name": "Orden Get",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{conductor_token}}" }],
+            "url": "{{base_url}}/ordenes/{{orden_id}}"
+          }
+        },
+        {
+          "name": "Orden Aceptar (Taller)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{taller_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/ordenes/{{orden_id}}/aceptar",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tiempo_estimado_respuesta_min\": 20,\n  \"tiempo_estimado_llegada_min\": 30,\n  \"notas_taller\": \"Aceptamos la orden\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Mecanico Disponibilidad TRUE",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{taller_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/mecanicos/{{mecanico_id}}/disponibilidad",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"disponible\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "Orden Asignar Mecanico",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{taller_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/ordenes/{{orden_id}}/asignar-mecanico",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mecanico_id\": \"{{mecanico_id}}\",\n  \"notas\": \"Asignacion inicial\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('asignacion_id', json.data?.id || '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Asignacion Estado EN_CAMINO",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{mecanico_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/asignaciones/{{asignacion_id}}/estado",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"en_camino\",\n  \"notas\": \"Saliendo al lugar\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Presupuesto Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{taller_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/ordenes/{{orden_id}}/presupuestos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"descripcion_trabajos\": \"Cambio de bateria y revision general\",\n  \"items_detalle\": {\n    \"items\": [\n      {\"concepto\": \"Bateria\", \"cantidad\": 1, \"precio\": 200},\n      {\"concepto\": \"Mano de obra\", \"cantidad\": 1, \"precio\": 50}\n    ]\n  },\n  \"monto_repuestos\": 200,\n  \"monto_mano_obra\": 50\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('presupuesto_id', json.data?.id || '');",
+                  "pm.collectionVariables.set('pago_monto', json.data?.monto_total || '250.00');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Presupuesto List By Orden",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{conductor_token}}" }],
+            "url": "{{base_url}}/ordenes/{{orden_id}}/presupuestos"
+          }
+        },
+        {
+          "name": "Presupuesto Rechazar (opcional)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{conductor_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/presupuestos/{{presupuesto_id}}/rechazar",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"motivo_rechazo\": \"No aceptado en esta prueba\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Presupuesto Aprobar",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{conductor_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/presupuestos/{{presupuesto_id}}/aprobar",
+            "body": { "mode": "raw", "raw": "{}" }
+          }
+        },
+        {
+          "name": "Asignacion Estado ATENDIENDO",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{mecanico_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/asignaciones/{{asignacion_id}}/estado",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"atendiendo\",\n  \"notas\": \"Iniciando atencion\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Orden Historial Estados",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{conductor_token}}" }],
+            "url": "{{base_url}}/ordenes/{{orden_id}}/historial-estados"
+          }
+        },
+        {
+          "name": "Orden Asignaciones List",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{conductor_token}}" }],
+            "url": "{{base_url}}/ordenes/{{orden_id}}/asignaciones"
+          }
+        },
+        {
+          "name": "Orden Create Para Cancelar",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{conductor_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/ordenes/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"averia_id\": \"{{averia_id}}\",\n  \"taller_id\": \"{{taller_id}}\",\n  \"categoria_id\": \"{{categoria_id}}\",\n  \"es_domicilio\": true,\n  \"notas_conductor\": \"Orden para cancelar\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('orden_cancelar_id', json.data?.id || '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Orden Cancelar",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{conductor_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/ordenes/{{orden_cancelar_id}}/cancelar",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"motivo_cancelacion\": \"Cancelada desde pruebas\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Orden Rechazar (opcional)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{taller_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/ordenes/{{orden_cancelar_id}}/rechazar",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"motivo_rechazo\": \"No hay disponibilidad\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 Pagos, Facturas y Calificaciones",
+      "item": [
+        {
+          "name": "Pago Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{conductor_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/pagos/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orden_id\": \"{{orden_id}}\",\n  \"presupuesto_id\": \"{{presupuesto_id}}\",\n  \"metodo\": \"tarjeta\",\n  \"monto\": {{pago_monto}}\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('pago_id', json.data?.id || '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Pago Get",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{conductor_token}}" }],
+            "url": "{{base_url}}/pagos/{{pago_id}}"
+          }
+        },
+        {
+          "name": "Pago Confirmar (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/pagos/{{pago_id}}/confirmar",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"referencia_externa\": \"POSTMAN-{{$timestamp}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Pagos List (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": "{{base_url}}/pagos/?skip=0&limit=20"
+          }
+        },
+        {
+          "name": "Comisiones List (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": "{{base_url}}/comisiones/?skip=0&limit=20"
+          }
+        },
+        {
+          "name": "Facturas List (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": "{{base_url}}/facturas?skip=0&limit=20"
+          }
+        },
+        {
+          "name": "Factura Generar desde Pago",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{conductor_token}}" }],
+            "url": "{{base_url}}/pagos/{{pago_id}}/factura"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('factura_id', json.data?.id || '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Factura Get",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{conductor_token}}" }],
+            "url": "{{base_url}}/facturas/{{factura_id}}"
+          }
+        },
+        {
+          "name": "Factura Get por Orden",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{conductor_token}}" }],
+            "url": "{{base_url}}/ordenes/{{orden_id}}/factura"
+          }
+        },
+        {
+          "name": "Orden Completar Manual (Admin/Taller)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/ordenes/{{orden_id}}/completar",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"observacion\": \"Completada manualmente para pruebas\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Calificacion Crear",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{conductor_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/ordenes/{{orden_id}}/calificaciones",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"puntuacion\": 5,\n  \"comentario\": \"Excelente servicio\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Calificacion List",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{conductor_token}}" }],
+            "url": "{{base_url}}/ordenes/{{orden_id}}/calificaciones"
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 Notificaciones y Chat",
+      "item": [
+        {
+          "name": "Notificaciones List",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{conductor_token}}" }],
+            "url": "{{base_url}}/notificaciones/?skip=0&limit=20&solo_no_leidas=false"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const rows = json.data || [];",
+                  "if (rows.length > 0) pm.collectionVariables.set('notificacion_id', rows[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Notificacion Marcar Leida",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Authorization", "value": "Bearer {{conductor_token}}" }],
+            "url": "{{base_url}}/notificaciones/{{notificacion_id}}/leer"
+          }
+        },
+        {
+          "name": "Notificaciones Leer Todas",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Authorization", "value": "Bearer {{conductor_token}}" }],
+            "url": "{{base_url}}/notificaciones/leer-todas"
+          }
+        },
+        {
+          "name": "Chat Obtener por Orden",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{conductor_token}}" }],
+            "url": "{{base_url}}/ordenes/{{orden_id}}/chat"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('chat_id', json.data?.id || '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Chat Enviar Mensaje",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{conductor_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/chats/{{chat_id}}/mensajes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contenido\": \"Hola, cual es el estado?\",\n  \"tipo\": \"texto\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('mensaje_id', json.data?.id || '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Chat List Mensajes",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{conductor_token}}" }],
+            "url": "{{base_url}}/chats/{{chat_id}}/mensajes?skip=0&limit=50"
+          }
+        },
+        {
+          "name": "Chat No Leidos Count",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{conductor_token}}" }],
+            "url": "{{base_url}}/chats/{{chat_id}}/no-leidos/count"
+          }
+        },
+        {
+          "name": "Chat Leer Mensaje",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Authorization", "value": "Bearer {{taller_token}}" }],
+            "url": "{{base_url}}/chats/{{chat_id}}/mensajes/{{mensaje_id}}/leer"
+          }
+        },
+        {
+          "name": "Chat Leer Todo",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Authorization", "value": "Bearer {{taller_token}}" }],
+            "url": "{{base_url}}/chats/{{chat_id}}/leer-todo"
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 Disponibilidad, Push y Metricas",
+      "item": [
+        {
+          "name": "Horario Taller List",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/talleres/{{taller_id}}/horarios"
+          }
+        },
+        {
+          "name": "Horario Taller Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{taller_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/talleres/{{taller_id}}/horarios",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dia_semana\": \"lunes\",\n  \"hora_apertura\": \"08:00:00\",\n  \"hora_cierre\": \"18:00:00\",\n  \"disponible\": true\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('horario_id', json.data?.id || '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Horario Taller Update",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{taller_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/talleres/{{taller_id}}/horarios/{{horario_id}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"disponible\": false\n}"
+            }
+          }
+        },
+        {
+          "name": "Horario Taller Delete",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{taller_token}}" }],
+            "url": "{{base_url}}/talleres/{{taller_id}}/horarios/{{horario_id}}"
+          }
+        },
+        {
+          "name": "Bloqueos Taller List",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/talleres/{{taller_id}}/bloqueos"
+          }
+        },
+        {
+          "name": "Bloqueo Taller Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{taller_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/talleres/{{taller_id}}/bloqueos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fecha_inicio\": \"2026-04-20T08:00:00\",\n  \"fecha_fin\": \"2026-04-20T10:00:00\",\n  \"motivo\": \"Mantenimiento interno\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('bloqueo_id', json.data?.id || '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Bloqueo Taller Delete",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{taller_token}}" }],
+            "url": "{{base_url}}/talleres/{{taller_id}}/bloqueos/{{bloqueo_id}}"
+          }
+        },
+        {
+          "name": "Push Registrar Dispositivo",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{conductor_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/push/dispositivos/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plataforma\": \"android\",\n  \"token_push\": \"token_push_postman_1234567890\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('dispositivo_id', json.data?.id || '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Push List Dispositivos",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{conductor_token}}" }],
+            "url": "{{base_url}}/push/dispositivos/"
+          }
+        },
+        {
+          "name": "Push Delete Dispositivo",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{conductor_token}}" }],
+            "url": "{{base_url}}/push/dispositivos/{{dispositivo_id}}"
+          }
+        },
+        {
+          "name": "Metricas List (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": "{{base_url}}/metricas/ordenes?skip=0&limit=20"
+          }
+        },
+        {
+          "name": "Metricas Recalcular Orden (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": "{{base_url}}/metricas/ordenes/{{orden_id}}/recalcular"
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 Limpieza opcional",
+      "item": [
+        {
+          "name": "Vehiculo Delete",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{conductor_token}}" }],
+            "url": "{{base_url}}/vehiculos/{{vehiculo_id}}"
+          }
+        }
+      ]
+    }
+  ]
+}
