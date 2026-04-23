@@ -37,6 +37,7 @@
     { "key": "asignacion_id", "value": "" },
     { "key": "presupuesto_id", "value": "" },
     { "key": "pago_id", "value": "" },
+    { "key": "comision_id", "value": "" },
     { "key": "factura_id", "value": "" },
 
     { "key": "chat_id", "value": "" },
@@ -197,6 +198,21 @@
               }
             }
           ]
+        },
+        {
+          "name": "Users Update Me",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{conductor_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/users/me",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Carlos\",\n  \"apellido\": \"Conductor\",\n  \"telefono\": \"70001010\",\n  \"foto_url\": \"https://example.com/avatar-conductor.jpg\"\n}"
+            }
+          }
         },
         {
           "name": "Users List (Admin)",
@@ -917,6 +933,44 @@
           }
         },
         {
+          "name": "Comisiones Mias (Taller)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{taller_token}}" }],
+            "url": "{{base_url}}/comisiones/mias?skip=0&limit=20"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const rows = json.data || [];",
+                  "const pending = rows.find(r => r.estado === 'pendiente');",
+                  "const picked = pending || rows[0];",
+                  "if (picked) pm.collectionVariables.set('comision_id', picked.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Comision Pagar (Taller)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{taller_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/comisiones/{{comision_id}}/pagar",
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          }
+        },
+        {
           "name": "Facturas List (Admin)",
           "request": {
             "method": "GET",
@@ -1293,6 +1347,14 @@
             "method": "DELETE",
             "header": [{ "key": "Authorization", "value": "Bearer {{conductor_token}}" }],
             "url": "{{base_url}}/vehiculos/{{vehiculo_id}}"
+          }
+        },
+        {
+          "name": "Auth Logout Conductor",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{conductor_token}}" }],
+            "url": "{{base_url}}/auth/logout"
           }
         }
       ]

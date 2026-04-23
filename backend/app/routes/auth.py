@@ -5,7 +5,8 @@ from app.models.enums import UserRole
 from app.models.usuario import Usuario
 from app.core.database import get_db
 from app.auth.hash import verify_password
-from app.auth.jwt import create_access_token
+from app.auth.dependencies import get_current_payload
+from app.auth.jwt import create_access_token, revoke_token_payload
 from app.services.user_service import create_user
 
 
@@ -47,3 +48,10 @@ def login(user_data: UsuarioLogin, db: Session = Depends(get_db)):
     access_token = create_access_token(data={"sub": str(user.id)})
     usuario_data = UsuarioRead.model_validate(user).model_dump()
     return {"access_token": access_token, "token_type": "bearer", "user": usuario_data}
+
+
+@router.post("/logout")
+def logout(payload_and_token: tuple[dict, str] = Depends(get_current_payload)):
+    payload, _ = payload_and_token
+    revoke_token_payload(payload)
+    return {"message": "Sesión cerrada exitosamente"}

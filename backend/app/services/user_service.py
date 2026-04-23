@@ -4,8 +4,9 @@ from sqlalchemy import select, func
 from uuid import UUID
 
 from app.auth.hash import hash_password
+from app.auth.hash import verify_password
 from app.models.usuario import Usuario
-from app.schemas.user_schema import UsuarioActualizarRol, UsuarioCrear
+from app.schemas.user_schema import UsuarioActualizarPerfil, UsuarioActualizarRol, UsuarioCrear
 
 
 def create_user(db: Session, user: UsuarioCrear) -> Usuario:
@@ -53,6 +54,34 @@ def update_user_rol(
         return None
 
     user.rol = update_data.rol
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+def update_user_profile(
+    db: Session,
+    user: Usuario,
+    payload: UsuarioActualizarPerfil,
+) -> Usuario:
+    changes = payload.model_dump(exclude_unset=True)
+
+    if not changes:
+        raise ValueError("No se enviaron campos para actualizar")
+
+    password_actual = changes.pop("password_actual", None)
+    password_nueva = changes.pop("password_nueva", None)
+
+    if password_actual is not None or password_nueva is not None:
+        if not password_actual or not password_nueva:
+            raise ValueError("Para cambiar contraseña debes enviar password_actual y password_nueva")
+        if not verify_password(password_actual, user.password_hash):
+            raise ValueError("La contraseña actual es incorrecta")
+        user.password_hash = hash_password(password_nueva)
+
+    for field, value in changes.items():
+        setattr(user, field, value)
+
     db.commit()
     db.refresh(user)
     return user

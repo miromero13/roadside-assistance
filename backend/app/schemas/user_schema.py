@@ -49,6 +49,15 @@ class UsuarioActualizarRol(BaseModel):
     rol: UserRole
 
 
+class UsuarioActualizarPerfil(BaseModel):
+    nombre: str | None = None
+    apellido: str | None = None
+    telefono: str | None = None
+    foto_url: str | None = None
+    password_actual: str | None = None
+    password_nueva: str | None = None
+
+
 # Alias de compatibilidad temporal
 UserCreate = UsuarioCrear
 UserLogin = UsuarioLogin

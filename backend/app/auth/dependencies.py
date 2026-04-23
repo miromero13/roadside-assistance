@@ -6,16 +6,16 @@ from sqlalchemy.orm import Session
 from uuid import UUID
 
 from app.core.database import get_db
-from app.auth.jwt import decode_access_token
+from app.auth.jwt import decode_access_token, is_token_payload_revoked
 from app.models.enums import UserRole
 from app.models.usuario import Usuario
 
 security = HTTPBearer()
 
-def get_current_user(
+
+def get_current_payload(
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: Session = Depends(get_db)
-) -> Usuario:
+) -> tuple[dict, str]:
     token = credentials.credentials
     payload = decode_access_token(token)
     if payload is None:
@@ -23,6 +23,19 @@ def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token inválido",
         )
+    if is_token_payload_revoked(payload):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token revocado",
+        )
+    return payload, token
+
+
+def get_current_user(
+    payload_and_token: tuple[dict, str] = Depends(get_current_payload),
+    db: Session = Depends(get_db)
+) -> Usuario:
+    payload, _ = payload_and_token
     user_id = payload.get("sub")
     if user_id is None:
         raise HTTPException(

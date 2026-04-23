@@ -22,8 +22,11 @@
 - Important gotcha: domain model is `Usuario` (not `User`). Prefer direct imports from domain modules in `app/models/*.py`; `app/models/user.py` is a compatibility re-export layer.
 - API prefix is `/api` (routers registered in `backend/main.py`).
 - Current RBAC baseline: `auth/register` only creates `conductor`; only `admin` can create talleres/categorías, and only `taller` can create mecánicos for its own taller.
+- Current auth baseline: `auth/logout` is available and revokes current JWT in-memory until token expiration (revocation is not persisted across server restarts).
 - Current ownership baseline: conductores only manage their own `vehiculos` and can only create averías linked to their own vehicles; admin can read all.
+- Current profile baseline: users can read and update their own profile via `/api/users/me` (`GET`/`PUT`), including optional password change with current-password validation.
 - Current order baseline: conductor selects taller manually (`/api/talleres/candidatos` + `/api/ordenes`); a single avería cannot have more than one active orden at the same time.
+- Current order fallback baseline: when a taller rejects a pending order, the system auto-creates a new pending order for another compatible candidate (same category + coverage), excluding already attempted talleres for that avería.
 - Current dispatch baseline: only the order's `taller` can accept/reject and assign mechanics; reassignment cancels previous assignment; mechanic can update only their own assignment states.
 - Current order controls baseline: orders expose cancel/manual-complete operations plus history (`historial-estados`) and assignment listing (`asignaciones`) endpoints with role/ownership checks.
 - Current budget baseline: only order's `taller` can create presupuestos; only order's conductor can approve/reject; a single orden can have only one `aprobado`, and no new versions can be created after approval.
@@ -35,6 +38,7 @@
 - Current chat baseline: chat also supports unread count and mark-all-read operations per participant (`/api/chats/{chat_id}/no-leidos/count`, `/api/chats/{chat_id}/leer-todo`).
 - Current operations baseline: admin can list pagos/comisiones with filters; taller/admin can update mechanic availability; taller details are public-read and owner/admin editable.
 - Current finance admin baseline: admin can list pagos/comisiones/facturas with filters (including date ranges) for operations visibility.
+- Current commission baseline: talleres can list/pay their own commissions via `/api/comisiones/mias` and `/api/comisiones/{comision_id}/pagar`; admin keeps global listing via `/api/comisiones/`.
 - Current metrics/availability baseline: admin can recalculate/list service metrics; taller/admin can manage taller horarios/bloqueos; users can register and deactivate push devices.
 - Current metrics/availability baseline: admin can recalculate/list service metrics with date/rating filters; metrics auto-refresh when an order is completed (payment or manual completion).
 - Current catalog baseline: categories are listable and admin-editable; taller/admin can create/list/update/soft-disable `servicios_taller` for each taller.

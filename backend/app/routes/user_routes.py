@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from uuid import UUID
 
 from app.schemas.user_schema import (
+    UsuarioActualizarPerfil,
     UsuarioActualizarRol,
     UsuarioCrear,
     UsuarioRead,
@@ -13,6 +14,7 @@ from app.services.user_service import (
     get_user,
     get_users,
     get_users_count,
+    update_user_profile,
     update_user_rol,
 )
 from app.core.database import get_db
@@ -71,6 +73,25 @@ async def get_user_route(
         status_code=200,
         message="Usuario obtenido exitosamente",
         data=user_data
+    )
+
+
+@router.put("/me")
+async def update_me_route(
+    payload: UsuarioActualizarPerfil,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    try:
+        updated_user = update_user_profile(db, current_user, payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    user_data = UsuarioRead.model_validate(updated_user).model_dump()
+    return response(
+        status_code=200,
+        message="Perfil actualizado correctamente",
+        data=user_data,
     )
 
 # ✅ GET /users/ → listado, protegido si quieres

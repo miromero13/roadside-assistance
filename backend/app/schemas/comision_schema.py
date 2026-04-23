@@ -19,3 +19,7 @@ class ComisionRead(BaseModel):
     pagado_en: datetime | None
 
     model_config = {"from_attributes": True}
+
+
+class ComisionPagarRequest(BaseModel):
+    referencia_externa: str | None = None

@@ -228,9 +228,112 @@ def rechazar_orden_por_taller(
         "Orden rechazada",
         "El taller rechazo tu solicitud de asistencia.",
     )
+
+    db.flush()
+    _crear_orden_automatica_tras_rechazo(db, orden, usuario_taller)
+
     db.commit()
     db.refresh(orden)
     return orden
+
+
+def _crear_orden_automatica_tras_rechazo(
+    db: Session,
+    orden_rechazada: OrdenServicio,
+    usuario_taller: Usuario,
+) -> OrdenServicio | None:
+    averia = db.execute(select(Averia).where(Averia.id == orden_rechazada.averia_id)).scalars().first()
+    if not averia:
+        return None
+
+    orden_activa = db.execute(
+        select(OrdenServicio)
+        .where(
+            OrdenServicio.averia_id == orden_rechazada.averia_id,
+            OrdenServicio.estado.in_(ESTADOS_ORDEN_ACTIVOS),
+        )
+        .limit(1)
+    ).scalars().first()
+    if orden_activa:
+        return None
+
+    talleres_intentados = set(
+        db.execute(
+            select(OrdenServicio.taller_id).where(OrdenServicio.averia_id == orden_rechazada.averia_id)
+        )
+        .scalars()
+        .all()
+    )
+
+    servicios_query = select(ServicioTaller).where(
+        ServicioTaller.categoria_id == orden_rechazada.categoria_id,
+        ServicioTaller.activo.is_(True),
+    )
+    if talleres_intentados:
+        servicios_query = servicios_query.where(ServicioTaller.taller_id.notin_(list(talleres_intentados)))
+
+    servicios = db.execute(servicios_query).scalars().all()
+
+    mejor_taller: Taller | None = None
+    mejor_distancia: float | None = None
+    for servicio in servicios:
+        taller = db.execute(
+            select(Taller).where(Taller.id == servicio.taller_id, Taller.activo.is_(True))
+        ).scalars().first()
+        if not taller:
+            continue
+
+        distancia = calcular_distancia_km(
+            float(averia.latitud_averia),
+            float(averia.longitud_averia),
+            float(taller.latitud),
+            float(taller.longitud),
+        )
+        if distancia > float(taller.radio_cobertura_km):
+            continue
+
+        if mejor_distancia is None or distancia < mejor_distancia:
+            mejor_taller = taller
+            mejor_distancia = distancia
+
+    if not mejor_taller:
+        return None
+
+    nueva_orden = OrdenServicio(
+        averia_id=orden_rechazada.averia_id,
+        taller_id=mejor_taller.id,
+        categoria_id=orden_rechazada.categoria_id,
+        estado=EstadoOrdenServicio.PENDIENTE_RESPUESTA,
+        es_domicilio=orden_rechazada.es_domicilio,
+        notas_conductor=orden_rechazada.notas_conductor,
+    )
+    db.add(nueva_orden)
+    db.flush()
+
+    _registrar_historial_orden(
+        db,
+        nueva_orden,
+        None,
+        EstadoOrdenServicio.PENDIENTE_RESPUESTA,
+        usuario_taller.id,
+        observacion="Orden creada automáticamente tras rechazo del taller anterior",
+    )
+
+    notificar_a_taller_por_orden(
+        db,
+        nueva_orden,
+        TipoNotificacion.ORDEN_NUEVA,
+        "Nueva orden",
+        "Se asignó automáticamente una nueva solicitud de asistencia.",
+    )
+    notificar_a_conductor_por_orden(
+        db,
+        nueva_orden,
+        TipoNotificacion.ORDEN_NUEVA,
+        "Nueva opción de taller encontrada",
+        "Tu solicitud fue redirigida automáticamente a otro taller compatible.",
+    )
+    return nueva_orden
 
 
 def _obtener_asignacion_activa(db: Session, orden_id) -> AsignacionOrden | None:
