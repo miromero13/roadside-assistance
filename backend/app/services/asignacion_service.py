@@ -29,6 +29,18 @@ def obtener_mecanico_por_usuario(db: Session, usuario_id) -> Mecanico | None:
     return db.execute(select(Mecanico).where(Mecanico.usuario_id == usuario_id)).scalars().first()
 
 
+def listar_asignaciones_mecanico(db: Session, mecanico_id):
+    return (
+        db.execute(
+            select(AsignacionOrden)
+            .where(AsignacionOrden.mecanico_id == mecanico_id)
+            .order_by(AsignacionOrden.asignado_en.desc())
+        )
+        .scalars()
+        .all()
+    )
+
+
 def _orden_tiene_presupuesto_aprobado(db: Session, orden_id) -> bool:
     presupuesto = db.execute(
         select(Presupuesto.id).where(

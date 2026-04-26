@@ -463,6 +463,19 @@ def listar_ordenes_para_usuario(
         result = db.execute(query.order_by(OrdenServicio.creado_en.desc()))
         return result.scalars().all()
 
+    if usuario.rol == UserRole.MECANICO:
+        query = (
+            select(OrdenServicio)
+            .join(AsignacionOrden, AsignacionOrden.orden_id == OrdenServicio.id)
+            .join(Mecanico, Mecanico.id == AsignacionOrden.mecanico_id)
+            .where(Mecanico.usuario_id == usuario.id)
+            .distinct()
+        )
+        if estado is not None:
+            query = query.where(OrdenServicio.estado == estado)
+        result = db.execute(query.order_by(OrdenServicio.creado_en.desc()))
+        return result.scalars().all()
+
     return []
 
 
@@ -600,5 +613,17 @@ def validar_acceso_orden(db: Session, orden: OrdenServicio, usuario: Usuario) ->
     if usuario.rol == UserRole.TALLER:
         taller = db.execute(select(Taller).where(Taller.usuario_id == usuario.id)).scalars().first()
         return bool(taller and orden.taller_id == taller.id)
+
+    if usuario.rol == UserRole.MECANICO:
+        asignacion = db.execute(
+            select(AsignacionOrden)
+            .join(Mecanico, Mecanico.id == AsignacionOrden.mecanico_id)
+            .where(
+                AsignacionOrden.orden_id == orden.id,
+                Mecanico.usuario_id == usuario.id,
+            )
+            .limit(1)
+        ).scalars().first()
+        return asignacion is not None
 
     return False

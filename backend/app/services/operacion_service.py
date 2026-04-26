@@ -12,8 +12,35 @@ def obtener_mecanico(db: Session, mecanico_id) -> Mecanico | None:
     return db.execute(select(Mecanico).where(Mecanico.id == mecanico_id)).scalars().first()
 
 
+def listar_mecanicos_para_usuario(
+    db: Session,
+    usuario_actual: Usuario,
+    disponible: bool | None = None,
+) -> list[Mecanico]:
+    query = select(Mecanico)
+
+    if usuario_actual.rol == UserRole.ADMIN:
+        pass
+    elif usuario_actual.rol == UserRole.TALLER:
+        taller = db.execute(select(Taller).where(Taller.usuario_id == usuario_actual.id)).scalars().first()
+        if not taller:
+            return []
+        query = query.where(Mecanico.taller_id == taller.id)
+    else:
+        raise PermissionError("No tienes permisos para listar mecánicos")
+
+    if disponible is not None:
+        query = query.where(Mecanico.disponible == disponible)
+
+    return db.execute(query.order_by(Mecanico.creado_en.desc())).scalars().all()
+
+
 def obtener_taller(db: Session, taller_id) -> Taller | None:
     return db.execute(select(Taller).where(Taller.id == taller_id)).scalars().first()
+
+
+def obtener_taller_por_usuario(db: Session, usuario_id) -> Taller | None:
+    return db.execute(select(Taller).where(Taller.usuario_id == usuario_id)).scalars().first()
 
 
 def _es_taller_dueno(db: Session, taller: Taller, usuario_id) -> bool:

@@ -28,6 +28,7 @@
 - Current order baseline: conductor selects taller manually (`/api/talleres/candidatos` + `/api/ordenes`); a single avería cannot have more than one active orden at the same time.
 - Current order fallback baseline: when a taller rejects a pending order, the system auto-creates a new pending order for another compatible candidate (same category + coverage), excluding already attempted talleres for that avería.
 - Current dispatch baseline: only the order's `taller` can accept/reject and assign mechanics; reassignment cancels previous assignment; mechanic can update only their own assignment states.
+- Current dispatch baseline: mechanics can also list their own assignments and read their own assignment detail via `/api/asignaciones/mias` and `/api/asignaciones/{asignacion_id}`.
 - Current order controls baseline: orders expose cancel/manual-complete operations plus history (`historial-estados`) and assignment listing (`asignaciones`) endpoints with role/ownership checks.
 - Current budget baseline: only order's `taller` can create presupuestos; only order's conductor can approve/reject; a single orden can have only one `aprobado`, and no new versions can be created after approval.
 - Current payment baseline: only order's conductor can create a single pago per orden with exact approved-budget amount; confirming pago creates 10% plataforma commission and auto-completes the orden.
@@ -37,6 +38,7 @@
 - Current chat baseline: order chat is available from accepted state onward; only order participants (conductor, order taller, active assigned mechanic, admin) can read/send messages.
 - Current chat baseline: chat also supports unread count and mark-all-read operations per participant (`/api/chats/{chat_id}/no-leidos/count`, `/api/chats/{chat_id}/leer-todo`).
 - Current operations baseline: admin can list pagos/comisiones with filters; taller/admin can update mechanic availability; taller details are public-read and owner/admin editable.
+- Current operations baseline: taller/admin can list mechanics via `/api/operaciones/mecanicos`; taller can resolve own workshop via `/api/operaciones/taller/mio`; taller/admin can update mechanic availability via `/api/mecanicos/{mecanico_id}/disponibilidad`.
 - Current finance admin baseline: admin can list pagos/comisiones/facturas with filters (including date ranges) for operations visibility.
 - Current commission baseline: talleres can list/pay their own commissions via `/api/comisiones/mias` and `/api/comisiones/{comision_id}/pagar`; admin keeps global listing via `/api/comisiones/`.
 - Current metrics/availability baseline: admin can recalculate/list service metrics; taller/admin can manage taller horarios/bloqueos; users can register and deactivate push devices.
@@ -50,15 +52,21 @@
 ## Frontend (`frontend/`)
 - Run:
   - `npm install`
+  - `nvm use` (uses `frontend/.nvmrc`, currently `22.13.1`) before running Angular commands
   - `npm run start`
   - `npm run build`
-  - `npm run test`
+  - `npm run test` (temporary smoke build in development mode; no spec files yet)
 - Tooling: Angular 21 + Spartan/Helm + Tailwind v4 (`frontend/src/styles.css`).
 - Entrypoints:
   - bootstrap: `frontend/src/main.ts`
   - root component: `frontend/src/app/app.ts`
-  - routes: `frontend/src/app/app.routes.ts` (currently empty).
+- routes: `frontend/src/app/app.routes.ts` (auth + app shell + role-protected conductor/taller/mecanico/admin sections).
+- Session baseline: token and user are persisted in localStorage to keep role guards stable on refresh; logout clears session + stored taller context.
 - No `src/**/*.spec.ts` files currently, even though test script exists.
+- Frontend roadmap baseline: build Web v1 first (roles `conductor` + `taller`), then Mobile v1 with native capabilities.
+- Web baseline includes admin core: auth/logout/profile, conductor flow (vehiculos, averias, ordenes, presupuestos, pagos, factura, calificacion), taller flow (ordenes, asignaciones, presupuestos, servicios, horarios/bloqueos, comisiones propias), mecanico flow (asignaciones + estado), admin flow (usuarios/roles, operaciones, catálogo, órdenes, finanzas, métricas), chat/notificaciones.
+- Mobile strategy baseline: do not mirror full web; prioritize native value (camera/media capture, geolocation, push notifications, fast emergency UX).
+- Implementation order baseline: 1) core/auth/profile, 2) conductor E2E, 3) taller E2E, 4) chat/notificaciones + hardening.
 
 ## Mobile (`mobile/`)
 - Use FVM commands (project expects FVM):
@@ -66,15 +74,21 @@
   - `fvm flutter run`
   - `fvm flutter test`
 - Flutter channel pinned via `mobile/.fvmrc` (`stable`).
-- App is mostly Flutter scaffold (`mobile/lib/main.dart`) with default widget test.
+- Mobile Sprint 1 baseline is implemented: app shell + session bootstrap, auth (login/register conductor), profile update, token/user persistence in `shared_preferences`, and backend API integration via `http`.
+- Mobile Sprint 2 baseline is implemented for conductor: mobile tabs for `vehiculos`, `averias`, and `ordenes` with create/list flows, candidate workshop lookup (`/api/talleres/candidatos`), order cancel from app, and order detail view with presupuestos/pago/factura/calificación/chat/historial/asignaciones.
+- Mobile Sprint 3 baseline is implemented for taller: mobile tabs for `ordenes`, `comisiones`, and `notificaciones` with accept/reject flow, order detail (assign mechanic, create budget, chat), and commission payment from app.
+- Mobile Sprint 4 baseline is implemented: native capabilities are integrated for conductor averías (current geolocation + camera/gallery photo capture + audio file attachment) and session-level push-device registration/deactivation against `/api/push/dispositivos`.
+- Mobile structure entrypoints: `mobile/lib/main.dart`, `mobile/lib/src/app.dart`, `mobile/lib/src/core/services/session_controller.dart`, `mobile/lib/src/features/auth/auth_page.dart`, `mobile/lib/src/features/profile/profile_page.dart`, `mobile/lib/src/features/conductor/pages/conductor_vehiculos_page.dart`, `mobile/lib/src/features/conductor/pages/conductor_averias_page.dart`, `mobile/lib/src/features/conductor/pages/conductor_ordenes_page.dart`, `mobile/lib/src/features/conductor/pages/conductor_orden_detalle_page.dart`, `mobile/lib/src/features/taller/pages/taller_ordenes_page.dart`, `mobile/lib/src/features/taller/pages/taller_orden_detalle_page.dart`, `mobile/lib/src/features/taller/pages/taller_comisiones_page.dart`, `mobile/lib/src/features/taller/pages/taller_notificaciones_page.dart`, `mobile/lib/src/core/services/native_device_service.dart`, `mobile/lib/src/core/services/push_device_service.dart`.
 
 ## Verification Strategy
 - Validate only the app you changed (backend/frontend/mobile), since there is no unified monorepo pipeline.
 - For backend changes, at minimum verify server startup and impacted endpoints.
 - Backend seed command available: `py scripts/seed_mvp.py`.
 - Backend smoke command available: `py scripts/smoke_e2e.py` (starts local uvicorn on port 8001 and validates the MVP end-to-end flow).
+- Backend admin QA command available: `py scripts/qa_admin_web.py` (starts local uvicorn on port 8001 and validates key admin endpoints used by web).
 - For frontend changes, at minimum verify `npm run build`.
-- For mobile changes, at minimum verify `fvm flutter test` or `fvm flutter run` if UI behavior changed.
+- For frontend release candidate, verify role-based route guards + auth token handling + main end-to-end happy paths (conductor and taller).
+- For mobile changes, at minimum verify `fvm flutter test`; for release hardening also run `fvm flutter analyze`.
 
 ## AGENTS.md Maintenance
 - Update `AGENTS.md` whenever repository changes could cause an agent to make wrong assumptions.

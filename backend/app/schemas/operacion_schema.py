@@ -7,6 +7,17 @@ class MecanicoDisponibilidadRequest(BaseModel):
     disponible: bool
 
 
+class MecanicoRead(BaseModel):
+    id: UUID
+    usuario_id: UUID
+    taller_id: UUID
+    especialidad: str | None
+    disponible: bool
+    activo: bool
+
+    model_config = {"from_attributes": True}
+
+
 class TallerRead(BaseModel):
     id: UUID
     usuario_id: UUID

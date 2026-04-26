@@ -8,12 +8,52 @@ from app.models.usuario import Usuario
 from app.schemas.orden_schema import AsignacionEstadoRequest, AsignacionRead
 from app.services.asignacion_service import (
     actualizar_estado_asignacion,
+    listar_asignaciones_mecanico,
     obtener_asignacion,
     obtener_mecanico_por_usuario,
 )
 from app.utils.response import response
 
 router = APIRouter(prefix="/asignaciones", tags=["Asignaciones"])
+
+
+@router.get("/mias")
+def listar_asignaciones_mias_route(
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(require_mecanico),
+):
+    mecanico = obtener_mecanico_por_usuario(db, current_user.id)
+    if not mecanico:
+        raise HTTPException(status_code=400, detail="El usuario no tiene perfil de mecánico")
+
+    asignaciones = listar_asignaciones_mecanico(db, mecanico.id)
+    data = [AsignacionRead.model_validate(item).model_dump() for item in asignaciones]
+    return response(
+        status_code=200,
+        message="Asignaciones del mecánico obtenidas",
+        data=data,
+        count_data=len(data),
+    )
+
+
+@router.get("/{asignacion_id}")
+def obtener_asignacion_mia_route(
+    asignacion_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(require_mecanico),
+):
+    asignacion = obtener_asignacion(db, asignacion_id)
+    if not asignacion:
+        raise HTTPException(status_code=404, detail="Asignación no encontrada")
+
+    mecanico = obtener_mecanico_por_usuario(db, current_user.id)
+    if not mecanico:
+        raise HTTPException(status_code=400, detail="El usuario no tiene perfil de mecánico")
+    if asignacion.mecanico_id != mecanico.id:
+        raise HTTPException(status_code=403, detail="No tienes permisos para ver esta asignación")
+
+    data = AsignacionRead.model_validate(asignacion).model_dump()
+    return response(status_code=200, message="Asignación obtenida", data=data)
 
 
 @router.put("/{asignacion_id}/estado")

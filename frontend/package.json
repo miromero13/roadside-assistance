@@ -3,10 +3,14 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
+    "prestart": "node ./scripts/check-node.mjs",
     "start": "ng serve",
+    "prebuild": "node ./scripts/check-node.mjs",
     "build": "ng build",
+    "prewatch": "node ./scripts/check-node.mjs",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "pretest": "node ./scripts/check-node.mjs",
+    "test": "ng build --configuration development"
   },
   "private": true,
   "packageManager": "npm@10.9.3",
