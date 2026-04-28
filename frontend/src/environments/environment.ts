@@ -1,3 +1,3 @@
 export const environment = {
-  apiBaseUrl: 'http://localhost:8000/api',
+  apiBaseUrl: 'https://roadside-assistance-api-835009713056.us-central1.run.app/api',
 };
