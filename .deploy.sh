@@ -1,39 +1,49 @@
 #!/bin/bash
 
-# --- CONFIGURACIÓN ---
-PROJECT_ID=$(gcloud config get-value project)
+# --- 1. VALIDACIÓN DE VARIABLES ---
+: "${DATABASE_URL:?Error: Falta DATABASE_URL}"
+: "${SECRET_KEY:?Error: Falta SECRET_KEY}"
+: "${ACCESS_TOKEN_EXPIRE_MINUTES:?Error: Falta ACCESS_TOKEN_EXPIRE_MINUTES}"
+: "${ALGORITHM:?Error: Falta ALGORITHM}"
+
+# --- 2. CONFIGURACIÓN DE RUTAS Y NOMBRES ---
 FRONTEND_PATH="$HOME/roadside-assistance/frontend"
 BACKEND_PATH="$HOME/roadside-assistance/backend"
 BUCKET_NAME="gs://roadside-assistance-app"
 SERVICE_NAME="roadside-assistance-api"
 REGION="us-east1"
 
-echo "🚀 Iniciando despliegue total en el proyecto: $PROJECT_ID"
+echo "🚀 Iniciando despliegue total..."
 
-# 1. Despliegue del Frontend
-echo "📦 Compilando Frontend..."
-cd $FRONTEND_PATH
+# --- 3. DESPLIEGUE DEL FRONTEND ---
+echo "📦 Paso 1: Compilando Frontend Angular..."
+cd "$FRONTEND_PATH" || exit
 npm install && npm run build
 
 if [ $? -eq 0 ]; then
-    echo "✅ Build de Frontend exitoso. Sincronizando con Storage..."
-    # Ajusta la ruta dist/ si tu build sale en otra carpeta
-    gsutil -m rsync -r -d dist/frontend/browser $BUCKET_NAME
+    echo "✅ Build exitoso. Sincronizando con Google Cloud Storage..."
+    # Usamos rsync para que el bucket sea espejo exacto de la carpeta dist
+    gsutil -m rsync -r -d dist/frontend/browser "$BUCKET_NAME"
 else
-    echo "❌ Error en el build del Frontend. Abortando."
+    echo "❌ Error en el build del Frontend. El despliegue se ha detenido."
     exit 1
 fi
 
-# 2. Despliegue del Backend
-echo "⚙️ Desplegando Backend a Cloud Run..."
-cd $BACKEND_PATH
-gcloud run deploy $SERVICE_NAME --source . --region $REGION --allow-unauthenticated
+# --- 4. DESPLIEGUE DEL BACKEND ---
+echo "⚙️ Paso 2: Desplegando Backend a Cloud Run..."
+cd "$BACKEND_PATH" || exit
+
+gcloud run deploy "$SERVICE_NAME" \
+  --source . \
+  --region "$REGION" \
+  --set-env-vars DATABASE_URL="$DATABASE_URL",SECRET_KEY="$SECRET_KEY",ACCESS_TOKEN_EXPIRE_MINUTES="$ACCESS_TOKEN_EXPIRE_MINUTES",ALGORITHM="$ALGORITHM" \
+  --allow-unauthenticated
 
 if [ $? -eq 0 ]; then
-    echo "✅ Backend desplegado con éxito."
+    echo "✅ Backend desplegado con éxito en Cloud Run."
 else
     echo "❌ Error en el despliegue del Backend."
     exit 1
 fi
 
-echo "🎉 ¡Despliegue completado con éxito!"
+echo "🎉 ¡Todo listo! Frontend y Backend actualizados."
