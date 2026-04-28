@@ -1,5 +1,14 @@
 #!/bin/bash
 
+# --- 0. CONFIGURAR ENTORNO NODE ---
+# Carga NVM para que el script pueda usarlo
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+echo "🟢 Configurando Node v22..."
+nvm install 22
+nvm use 22
+
 # --- 1. VALIDACIÓN DE VARIABLES ---
 : "${DATABASE_URL:?Error: Falta DATABASE_URL}"
 : "${SECRET_KEY:?Error: Falta SECRET_KEY}"
@@ -22,7 +31,6 @@ npm install && npm run build
 
 if [ $? -eq 0 ]; then
     echo "✅ Build exitoso. Sincronizando con Google Cloud Storage..."
-    # Usamos rsync para que el bucket sea espejo exacto de la carpeta dist
     gsutil -m rsync -r -d dist/frontend/browser "$BUCKET_NAME"
 else
     echo "❌ Error en el build del Frontend. El despliegue se ha detenido."
