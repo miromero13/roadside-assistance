@@ -10,6 +10,16 @@ export interface AdminUsuario {
   activo: boolean;
 }
 
+export interface AdminTaller {
+  id: string;
+  usuario_id: string;
+  nombre: string;
+  direccion: string;
+  telefono: string;
+  activo: boolean;
+  usuario: AdminUsuario;
+}
+
 export interface AdminOrden {
   id: string;
   averia_id: string;
@@ -109,6 +119,7 @@ export interface AdminMecanico {
   especialidad: string | null;
   disponible: boolean;
   activo: boolean;
+  usuario?: AdminUsuario | null;
 }
 
 export interface AdminServicioTaller {

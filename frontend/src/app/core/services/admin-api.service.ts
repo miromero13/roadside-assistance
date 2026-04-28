@@ -11,6 +11,7 @@ import {
   AdminMetrica,
   AdminOrden,
   AdminPago,
+  AdminTaller,
   AdminServicioTaller,
   AdminUsuario,
   ListResponse,
@@ -46,9 +47,22 @@ export class AdminApiService {
     return this.api.get<ListResponse<AdminAsignacion>>(`/ordenes/${ordenId}/asignaciones`);
   }
 
+  listTalleres() {
+    return this.api.get<ListResponse<AdminTaller>>('/operaciones/talleres');
+  }
+
+  getTaller(tallerId: string) {
+    return this.api.get<ApiResponse<AdminTaller>>(`/talleres/${tallerId}`);
+  }
+
   listMecanicos(disponible?: boolean) {
     const query = disponible === undefined ? '' : `?disponible=${disponible}`;
     return this.api.get<ListResponse<AdminMecanico>>(`/operaciones/mecanicos${query}`);
+  }
+
+  listMecanicosPorTaller(tallerId: string, disponible?: boolean) {
+    const query = disponible === undefined ? '' : `?disponible=${disponible}`;
+    return this.api.get<ListResponse<AdminMecanico>>(`/operaciones/talleres/${tallerId}/mecanicos${query}`);
   }
 
   updateMecanicoDisponibilidad(mecanicoId: string, disponible: boolean) {
