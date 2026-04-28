@@ -3,11 +3,9 @@
 # --- 0. CONFIGURAR ENTORNO NODE ---
 echo "⚙️ Cargando NVM..."
 export NVM_DIR="$HOME/.nvm"
-# Intentar cargar desde varias rutas posibles en Cloud Shell
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 [ -s "/usr/local/nvm/nvm.sh" ] && \. "/usr/local/nvm/nvm.sh"
 
-# Verificar si nvm se cargó, si no, intentar cargarlo desde el profile
 if ! command -v nvm &> /dev/null; then
     source ~/.bashrc
 fi
@@ -39,6 +37,10 @@ npm install && npm run build -- --base-href ./
 if [ $? -eq 0 ]; then
     echo "✅ Build exitoso. Sincronizando con Google Cloud Storage..."
     gsutil -m rsync -r -d dist/frontend/browser "$BUCKET_NAME"
+    
+    # --- NUEVO: CONFIGURACIÓN DE SPA (Manejo de rutas de Angular) ---
+    echo "🔧 Configurando Bucket para Single Page Application..."
+    gsutil web set -m index.html -e index.html "$BUCKET_NAME"
 else
     echo "❌ Error en el build del Frontend."
     exit 1
