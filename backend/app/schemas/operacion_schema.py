@@ -2,6 +2,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.schemas.user_schema import UsuarioRead
+
 
 class MecanicoDisponibilidadRequest(BaseModel):
     disponible: bool
@@ -14,6 +16,18 @@ class MecanicoRead(BaseModel):
     especialidad: str | None
     disponible: bool
     activo: bool
+
+    model_config = {"from_attributes": True}
+
+
+class MecanicoConUsuarioRead(BaseModel):
+    id: UUID
+    usuario_id: UUID
+    taller_id: UUID
+    especialidad: str | None
+    disponible: bool
+    activo: bool
+    usuario: UsuarioRead
 
     model_config = {"from_attributes": True}
 
@@ -33,6 +47,18 @@ class TallerRead(BaseModel):
     calificacion_promedio: float
     tiempo_respuesta_promedio_min: int | None
     activo: bool
+
+    model_config = {"from_attributes": True}
+
+
+class TallerConUsuarioRead(BaseModel):
+    id: UUID
+    usuario_id: UUID
+    nombre: str
+    direccion: str
+    telefono: str
+    activo: bool
+    usuario: UsuarioRead
 
     model_config = {"from_attributes": True}
 

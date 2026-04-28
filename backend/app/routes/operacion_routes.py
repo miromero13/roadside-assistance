@@ -2,19 +2,23 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from uuid import UUID
 
-from app.auth.dependencies import get_current_user, require_taller
+from app.auth.dependencies import get_current_user, require_admin, require_taller
 from app.core.database import get_db
 from app.models.usuario import Usuario
 from app.schemas.operacion_schema import (
+    MecanicoConUsuarioRead,
     MecanicoRead,
     MecanicoDisponibilidadRequest,
+    TallerConUsuarioRead,
     TallerActualizarRequest,
     TallerRead,
 )
 from app.services.operacion_service import (
     actualizar_disponibilidad_mecanico,
     actualizar_taller,
+    listar_mecanicos_por_taller,
     listar_mecanicos_para_usuario,
+    listar_talleres,
     obtener_mecanico,
     obtener_taller,
     obtener_taller_por_usuario,
@@ -22,6 +26,21 @@ from app.services.operacion_service import (
 from app.utils.response import response
 
 router = APIRouter(tags=["Operación"])
+
+
+@router.get("/operaciones/talleres")
+def listar_talleres_route(
+    db: Session = Depends(get_db),
+    _: Usuario = Depends(require_admin),
+):
+    talleres = listar_talleres(db)
+    data = [TallerConUsuarioRead.model_validate(item).model_dump() for item in talleres]
+    return response(
+        status_code=200,
+        message="Talleres obtenidos exitosamente",
+        data=data,
+        count_data=len(data),
+    )
 
 
 @router.get("/operaciones/taller/mio")
@@ -48,10 +67,31 @@ def listar_mecanicos_route(
     except PermissionError as exc:
         raise HTTPException(status_code=403, detail=str(exc))
 
-    data = [MecanicoRead.model_validate(item).model_dump() for item in mecanicos]
+    data = [MecanicoConUsuarioRead.model_validate(item).model_dump() for item in mecanicos]
     return response(
         status_code=200,
         message="Mecánicos obtenidos exitosamente",
+        data=data,
+        count_data=len(data),
+    )
+
+
+@router.get("/operaciones/talleres/{taller_id}/mecanicos")
+def listar_mecanicos_por_taller_route(
+    taller_id: UUID,
+    disponible: bool | None = Query(default=None),
+    db: Session = Depends(get_db),
+    _: Usuario = Depends(require_admin),
+):
+    taller = obtener_taller(db, taller_id)
+    if not taller:
+        raise HTTPException(status_code=404, detail="Taller no encontrado")
+
+    mecanicos = listar_mecanicos_por_taller(db, taller_id=taller_id, disponible=disponible)
+    data = [MecanicoConUsuarioRead.model_validate(item).model_dump() for item in mecanicos]
+    return response(
+        status_code=200,
+        message="Mecánicos del taller obtenidos exitosamente",
         data=data,
         count_data=len(data),
     )

@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from sqlalchemy.orm import selectinload
 
 from app.models.enums import UserRole
 from app.models.taller import Mecanico, Taller
@@ -17,7 +18,7 @@ def listar_mecanicos_para_usuario(
     usuario_actual: Usuario,
     disponible: bool | None = None,
 ) -> list[Mecanico]:
-    query = select(Mecanico)
+    query = select(Mecanico).options(selectinload(Mecanico.usuario))
 
     if usuario_actual.rol == UserRole.ADMIN:
         pass
@@ -35,12 +36,30 @@ def listar_mecanicos_para_usuario(
     return db.execute(query.order_by(Mecanico.creado_en.desc())).scalars().all()
 
 
+def listar_mecanicos_por_taller(
+    db: Session,
+    taller_id,
+    disponible: bool | None = None,
+) -> list[Mecanico]:
+    query = select(Mecanico).options(selectinload(Mecanico.usuario)).where(Mecanico.taller_id == taller_id)
+
+    if disponible is not None:
+        query = query.where(Mecanico.disponible == disponible)
+
+    return db.execute(query.order_by(Mecanico.creado_en.desc())).scalars().all()
+
+
 def obtener_taller(db: Session, taller_id) -> Taller | None:
     return db.execute(select(Taller).where(Taller.id == taller_id)).scalars().first()
 
 
 def obtener_taller_por_usuario(db: Session, usuario_id) -> Taller | None:
     return db.execute(select(Taller).where(Taller.usuario_id == usuario_id)).scalars().first()
+
+
+def listar_talleres(db: Session) -> list[Taller]:
+    query = select(Taller).options(selectinload(Taller.usuario))
+    return db.execute(query.order_by(Taller.creado_en.desc())).scalars().all()
 
 
 def _es_taller_dueno(db: Session, taller: Taller, usuario_id) -> bool:
