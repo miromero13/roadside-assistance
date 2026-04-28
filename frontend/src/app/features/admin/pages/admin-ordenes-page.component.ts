@@ -1,19 +1,22 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { lucideMoreVertical } from '@ng-icons/lucide';
 
-import {
-  AdminAsignacion,
-  AdminHistorialOrden,
-  AdminOrden,
-} from '../../../core/models/admin.model';
+import { AdminOrden } from '../../../core/models/admin.model';
 import { AdminApiService } from '../../../core/services/admin-api.service';
 import { getErrorMessage } from '../../../core/utils/http-error.util';
+import { HlmIcon } from '@spartan-ng/helm/icon';
+import { HlmTable } from '@spartan-ng/helm/table';
+import { HlmButton } from '@spartan-ng/helm/button';
 
 @Component({
   selector: 'app-admin-ordenes-page',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, HlmButton, HlmIcon, HlmTable, NgIcon, RouterLink],
+  providers: [provideIcons({ lucideMoreVertical })],
   templateUrl: './admin-ordenes-page.component.html',
 })
 export class AdminOrdenesPageComponent {
@@ -21,10 +24,8 @@ export class AdminOrdenesPageComponent {
 
   protected readonly ordenes = signal<AdminOrden[]>([]);
   protected readonly filtroEstado = signal('');
-  protected readonly ordenSeleccionadaId = signal<string | null>(null);
-  protected readonly historial = signal<AdminHistorialOrden[]>([]);
-  protected readonly asignaciones = signal<AdminAsignacion[]>([]);
   protected readonly errorMessage = signal('');
+  protected readonly actionMenuOpenId = signal<string | null>(null);
 
   constructor() {
     void this.loadOrdenes();
@@ -32,22 +33,12 @@ export class AdminOrdenesPageComponent {
 
   protected async setFiltro(estado: string): Promise<void> {
     this.filtroEstado.set(estado);
+    this.actionMenuOpenId.set(null);
     await this.loadOrdenes();
   }
 
-  protected async verDetalle(ordenId: string): Promise<void> {
-    this.errorMessage.set('');
-    this.ordenSeleccionadaId.set(ordenId);
-    try {
-      const [historialResponse, asignacionesResponse] = await Promise.all([
-        firstValueFrom(this.api.getOrdenHistorial(ordenId)),
-        firstValueFrom(this.api.getOrdenAsignaciones(ordenId)),
-      ]);
-      this.historial.set(historialResponse.data ?? []);
-      this.asignaciones.set(asignacionesResponse.data ?? []);
-    } catch (error) {
-      this.errorMessage.set(getErrorMessage(error, 'No se pudo cargar el detalle de la orden.'));
-    }
+  protected toggleActionMenu(ordenId: string): void {
+    this.actionMenuOpenId.set(this.actionMenuOpenId() === ordenId ? null : ordenId);
   }
 
   private async loadOrdenes(): Promise<void> {

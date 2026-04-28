@@ -1,7 +1,9 @@
 <section class="space-y-5">
-  <header>
+  <header class="flex flex-wrap items-start justify-between gap-3">
+    <div>
     <h1 class="text-2xl font-semibold">Supervisión de órdenes</h1>
     <p class="text-sm text-slate-500">Consulta órdenes, historial y asignaciones.</p>
+    </div>
   </header>
 
   <div class="flex flex-wrap gap-2">
@@ -16,37 +18,51 @@
     <p class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{{ errorMessage() }}</p>
   }
 
-  <div class="space-y-2">
-    @for (orden of ordenes(); track orden.id) {
-      <article class="space-y-2 rounded-xl border border-slate-200 p-3">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <p class="font-medium">Orden {{ orden.id.slice(0, 8) }} · {{ orden.estado }}</p>
-          <span class="text-xs text-slate-500">{{ orden.creado_en | date: 'short' }}</span>
-        </div>
-        <p class="text-sm text-slate-500">Avería {{ orden.averia_id }} · Taller {{ orden.taller_id }}</p>
-        <button class="rounded-lg border border-slate-300 px-3 py-1 text-sm" type="button" (click)="verDetalle(orden.id)">Ver historial/asignaciones</button>
-      </article>
-    }
-  </div>
+  <article class="space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <h2 class="font-medium">Órdenes ({{ ordenes().length }})</h2>
+    <div class="overflow-hidden rounded-xl border border-slate-200">
+      <table hlmTable class="w-full">
+        <thead class="bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
+          <tr>
+            <th class="px-4 py-3">Orden</th>
+            <th class="px-4 py-3">Avería</th>
+            <th class="px-4 py-3">Taller</th>
+            <th class="px-4 py-3">Estado</th>
+            <th class="px-4 py-3">Creada</th>
+            <th class="px-4 py-3 text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200">
+          @for (orden of ordenes(); track orden.id) {
+            <tr class="hover:bg-slate-50">
+              <td class="px-4 py-3 font-medium text-slate-900">{{ orden.id.slice(0, 8) }}</td>
+              <td class="px-4 py-3 text-sm text-slate-600">{{ orden.averia_id.slice(0, 8) }}</td>
+              <td class="px-4 py-3 text-sm text-slate-600">{{ orden.taller_id.slice(0, 8) }}</td>
+              <td class="px-4 py-3 text-sm text-slate-600">{{ orden.estado }}</td>
+              <td class="px-4 py-3 text-sm text-slate-600">{{ orden.creado_en | date: 'short' }}</td>
+              <td class="relative px-4 py-3 text-right">
+                <button hlmBtn type="button" variant="ghost" size="icon-sm" (click)="toggleActionMenu(orden.id)">
+                  <ng-icon hlm name="lucideMoreVertical" size="sm" />
+                </button>
 
-  @if (ordenSeleccionadaId()) {
-    <article class="space-y-2 rounded-xl border border-slate-200 p-4">
-      <h2 class="font-medium">Detalle de orden {{ ordenSeleccionadaId() }}</h2>
-      <p class="text-sm font-medium">Historial</p>
-      @for (h of historial(); track h.id) {
-        <p class="text-sm text-slate-600">{{ h.creado_en | date: 'short' }} · {{ h.estado_anterior ?? '-' }} -> {{ h.estado_nuevo }} · {{ h.observacion ?? 'sin observación' }}</p>
-      }
-      @if (!historial().length) {
-        <p class="text-sm text-slate-500">Sin historial.</p>
-      }
+                @if (actionMenuOpenId() === orden.id) {
+                  <div class="absolute right-4 top-11 z-20 min-w-44 rounded-xl border border-slate-200 bg-white p-1 shadow-lg">
+                    <a class="flex w-full items-center rounded-lg px-3 py-2 text-left text-sm hover:bg-slate-100" [routerLink]="['/app/admin/ordenes', orden.id]">
+                      Ver detalles
+                    </a>
+                  </div>
+                }
+              </td>
+            </tr>
+          }
 
-      <p class="pt-2 text-sm font-medium">Asignaciones</p>
-      @for (a of asignaciones(); track a.id) {
-        <p class="text-sm text-slate-600">{{ a.asignado_en | date: 'short' }} · mecánico {{ a.mecanico_id }} · {{ a.estado }}</p>
-      }
-      @if (!asignaciones().length) {
-        <p class="text-sm text-slate-500">Sin asignaciones.</p>
-      }
-    </article>
-  }
+          @if (!ordenes().length) {
+            <tr>
+              <td class="px-4 py-8 text-center text-sm text-slate-500" colspan="6">No hay órdenes para el filtro seleccionado.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </article>
 </section>

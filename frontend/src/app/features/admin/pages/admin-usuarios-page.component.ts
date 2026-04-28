@@ -6,11 +6,12 @@ import { AdminUsuario } from '../../../core/models/admin.model';
 import { AdminApiService } from '../../../core/services/admin-api.service';
 import { SessionService } from '../../../core/services/session.service';
 import { getErrorMessage } from '../../../core/utils/http-error.util';
+import { HlmTable } from '@spartan-ng/helm/table';
 
 @Component({
   selector: 'app-admin-usuarios-page',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, HlmTable],
   templateUrl: './admin-usuarios-page.component.html',
 })
 export class AdminUsuariosPageComponent {

@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 
 import { ApiResponse } from '../models/api.model';
 import {
+  AdminAveria,
   AdminAsignacion,
   AdminCategoriaServicio,
   AdminComision,
@@ -37,6 +38,10 @@ export class AdminApiService {
 
   getOrden(ordenId: string) {
     return this.api.get<ApiResponse<AdminOrden>>(`/ordenes/${ordenId}`);
+  }
+
+  getAveria(averiaId: string) {
+    return this.api.get<ApiResponse<AdminAveria>>(`/averias/${averiaId}`);
   }
 
   getOrdenHistorial(ordenId: string) {

@@ -36,6 +36,21 @@ export interface AdminOrden {
   creado_en: string;
 }
 
+export interface AdminAveria {
+  id: string;
+  vehiculo_id: string;
+  descripcion_conductor: string;
+  latitud_averia: number;
+  longitud_averia: number;
+  direccion_averia: string | null;
+  prioridad: string;
+  estado: string;
+  requiere_mas_informacion: boolean;
+  creado_en: string;
+  actualizado_en: string;
+  cancelado_en: string | null;
+}
+
 export interface AdminHistorialOrden {
   id: string;
   orden_id: string;

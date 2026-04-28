@@ -20,26 +20,48 @@
     <p class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{{ successMessage() }}</p>
   }
 
-  <div class="space-y-2">
-    @for (user of usuariosFiltrados(); track user.id) {
-      <article class="grid gap-2 rounded-xl border border-slate-200 p-3 sm:grid-cols-[1fr_auto] sm:items-center">
-        <div>
-          <p class="font-medium">{{ user.nombre }} {{ user.apellido }}</p>
-          <p class="text-sm text-slate-500">{{ user.email }} · {{ user.telefono }} · {{ user.rol }}</p>
-        </div>
-        <div class="flex items-center gap-2">
-          <select class="rounded-lg border border-slate-300 px-3 py-2 text-sm" [value]="user.rol" [disabled]="currentUserId() === user.id" (change)="actualizarRol(user, $any($event.target).value)">
-            <option value="conductor">conductor</option>
-            <option value="taller">taller</option>
-            <option value="mecanico">mecanico</option>
-            <option value="admin">admin</option>
-          </select>
-        </div>
-      </article>
-    }
+  <article class="space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <h2 class="font-medium">Usuarios filtrados ({{ usuariosFiltrados().length }})</h2>
+    <div class="overflow-hidden rounded-xl border border-slate-200">
+      <table hlmTable class="w-full">
+        <thead class="bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
+          <tr>
+            <th class="px-4 py-3">Usuario</th>
+            <th class="px-4 py-3">Contacto</th>
+            <th class="px-4 py-3">Rol</th>
+            <th class="px-4 py-3 text-right">Acción</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200">
+          @for (user of usuariosFiltrados(); track user.id) {
+            <tr class="hover:bg-slate-50">
+              <td class="px-4 py-3">
+                <p class="font-medium text-slate-900">{{ user.nombre }} {{ user.apellido }}</p>
+                <p class="text-sm text-slate-500">ID: {{ user.id.slice(0, 8) }}</p>
+              </td>
+              <td class="px-4 py-3 text-sm text-slate-600">
+                <p>{{ user.email }}</p>
+                <p>{{ user.telefono }}</p>
+              </td>
+              <td class="px-4 py-3 text-sm text-slate-600">{{ user.rol }}</td>
+              <td class="px-4 py-3 text-right">
+                <select class="rounded-lg border border-slate-300 px-3 py-2 text-sm" [value]="user.rol" [disabled]="currentUserId() === user.id" (change)="actualizarRol(user, $any($event.target).value)">
+                  <option value="conductor">conductor</option>
+                  <option value="taller">taller</option>
+                  <option value="mecanico">mecanico</option>
+                  <option value="admin">admin</option>
+                </select>
+              </td>
+            </tr>
+          }
 
-    @if (!usuariosFiltrados().length) {
-      <p class="rounded-lg border border-dashed border-slate-300 px-3 py-4 text-sm text-slate-500">No hay usuarios para el filtro seleccionado.</p>
-    }
-  </div>
+          @if (!usuariosFiltrados().length) {
+            <tr>
+              <td class="px-4 py-8 text-center text-sm text-slate-500" colspan="4">No hay usuarios para el filtro seleccionado.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </article>
 </section>

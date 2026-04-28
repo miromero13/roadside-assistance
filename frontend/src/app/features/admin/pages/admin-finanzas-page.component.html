@@ -16,29 +16,97 @@
   }
 
   @if (tab() === 'pagos') {
-    <article class="space-y-2 rounded-xl border border-slate-200 p-4">
+    <article class="space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
       <h2 class="font-medium">Pagos ({{ pagos().length }})</h2>
-      @for (p of pagos(); track p.id) {
-        <p class="text-sm text-slate-600">{{ p.creado_en | date: 'short' }} · {{ p.estado }} · {{ p.metodo }} · Bs {{ p.monto }}</p>
-      }
+      <div class="overflow-hidden rounded-xl border border-slate-200">
+        <table hlmTable class="w-full">
+          <thead class="bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
+            <tr>
+              <th class="px-4 py-3">Fecha</th>
+              <th class="px-4 py-3">Estado</th>
+              <th class="px-4 py-3">Método</th>
+              <th class="px-4 py-3 text-right">Monto</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200">
+            @for (p of pagos(); track p.id) {
+              <tr class="hover:bg-slate-50">
+                <td class="px-4 py-3 text-sm text-slate-600">{{ p.creado_en | date: 'short' }}</td>
+                <td class="px-4 py-3 text-sm text-slate-600">{{ p.estado }}</td>
+                <td class="px-4 py-3 text-sm text-slate-600">{{ p.metodo }}</td>
+                <td class="px-4 py-3 text-right text-sm text-slate-600">Bs {{ p.monto }}</td>
+              </tr>
+            }
+            @if (!pagos().length) {
+              <tr>
+                <td class="px-4 py-8 text-center text-sm text-slate-500" colspan="4">No hay pagos.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
     </article>
   }
 
   @if (tab() === 'comisiones') {
-    <article class="space-y-2 rounded-xl border border-slate-200 p-4">
+    <article class="space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
       <h2 class="font-medium">Comisiones ({{ comisiones().length }})</h2>
-      @for (c of comisiones(); track c.id) {
-        <p class="text-sm text-slate-600">{{ c.creado_en | date: 'short' }} · {{ c.estado }} · Bs {{ c.monto_comision }}</p>
-      }
+      <div class="overflow-hidden rounded-xl border border-slate-200">
+        <table hlmTable class="w-full">
+          <thead class="bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
+            <tr>
+              <th class="px-4 py-3">Fecha</th>
+              <th class="px-4 py-3">Estado</th>
+              <th class="px-4 py-3 text-right">Comisión</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200">
+            @for (c of comisiones(); track c.id) {
+              <tr class="hover:bg-slate-50">
+                <td class="px-4 py-3 text-sm text-slate-600">{{ c.creado_en | date: 'short' }}</td>
+                <td class="px-4 py-3 text-sm text-slate-600">{{ c.estado }}</td>
+                <td class="px-4 py-3 text-right text-sm text-slate-600">Bs {{ c.monto_comision }}</td>
+              </tr>
+            }
+            @if (!comisiones().length) {
+              <tr>
+                <td class="px-4 py-8 text-center text-sm text-slate-500" colspan="3">No hay comisiones.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
     </article>
   }
 
   @if (tab() === 'facturas') {
-    <article class="space-y-2 rounded-xl border border-slate-200 p-4">
+    <article class="space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
       <h2 class="font-medium">Facturas ({{ facturas().length }})</h2>
-      @for (f of facturas(); track f.id) {
-        <p class="text-sm text-slate-600">{{ f.emitida_en | date: 'short' }} · {{ f.numero_factura }} · Bs {{ f.total }}</p>
-      }
+      <div class="overflow-hidden rounded-xl border border-slate-200">
+        <table hlmTable class="w-full">
+          <thead class="bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
+            <tr>
+              <th class="px-4 py-3">Emitida</th>
+              <th class="px-4 py-3">Número</th>
+              <th class="px-4 py-3 text-right">Total</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200">
+            @for (f of facturas(); track f.id) {
+              <tr class="hover:bg-slate-50">
+                <td class="px-4 py-3 text-sm text-slate-600">{{ f.emitida_en | date: 'short' }}</td>
+                <td class="px-4 py-3 text-sm text-slate-600">{{ f.numero_factura }}</td>
+                <td class="px-4 py-3 text-right text-sm text-slate-600">Bs {{ f.total }}</td>
+              </tr>
+            }
+            @if (!facturas().length) {
+              <tr>
+                <td class="px-4 py-8 text-center text-sm text-slate-500" colspan="3">No hay facturas.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
     </article>
   }
 </section>

@@ -31,7 +31,7 @@
               <th class="px-4 py-3">Taller</th>
               <th class="px-4 py-3">Contacto</th>
               <th class="px-4 py-3">Estado</th>
-              <th class="px-4 py-3 text-right">Acción</th>
+              <th class="px-4 py-3 text-right">Acciones</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-200">
@@ -40,8 +40,18 @@
               <td class="px-4 py-3 font-medium text-slate-900">{{ taller.nombre }}</td>
               <td class="px-4 py-3 text-slate-600">{{ taller.usuario.nombre }} {{ taller.usuario.apellido }} · {{ taller.usuario.email }}</td>
               <td class="px-4 py-3 text-slate-600">{{ taller.activo ? 'Activo' : 'Inactivo' }}</td>
-              <td class="px-4 py-3 text-right">
-                <a class="rounded-lg border px-3 py-1 text-sm inline-flex items-center" [routerLink]="['/app/admin/operaciones', taller.id]" [queryParamsHandling]="'preserve'">Ver detalles</a>
+              <td class="relative px-4 py-3 text-right">
+                <button hlmBtn type="button" variant="ghost" size="icon-sm" (click)="toggleActionMenu(taller.id)">
+                  <ng-icon hlm name="lucideMoreVertical" size="sm" />
+                </button>
+
+                @if (actionMenuOpenId() === taller.id) {
+                  <div class="absolute right-4 top-11 z-20 min-w-44 rounded-xl border border-slate-200 bg-white p-1 shadow-lg">
+                    <a class="flex w-full items-center rounded-lg px-3 py-2 text-left text-sm hover:bg-slate-100" [routerLink]="['/app/admin/operaciones', taller.id]" [queryParamsHandling]="'preserve'">
+                      Ver detalles
+                    </a>
+                  </div>
+                }
               </td>
             </tr>
           }

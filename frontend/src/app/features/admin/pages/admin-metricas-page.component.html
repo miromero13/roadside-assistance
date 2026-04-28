@@ -16,15 +16,38 @@
     <p class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{{ successMessage() }}</p>
   }
 
-  <article class="space-y-2 rounded-xl border border-slate-200 p-4">
+  <article class="space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
     <h2 class="font-medium">Listado de métricas ({{ metricas().length }})</h2>
-    @for (m of metricas(); track m.id) {
-      <p class="text-sm text-slate-600">
-        {{ m.creado_en | date: 'short' }} · orden {{ m.orden_id }} · resp {{ m.tiempo_respuesta_min ?? 'N/A' }} min ·
-        llegada {{ m.tiempo_llegada_min ?? 'N/A' }} min ·
-        resolución {{ m.tiempo_resolucion_min ?? 'N/A' }} min ·
-        calif {{ m.calificacion_final ?? 'N/A' }}
-      </p>
-    }
+    <div class="overflow-hidden rounded-xl border border-slate-200">
+      <table hlmTable class="w-full">
+        <thead class="bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
+          <tr>
+            <th class="px-4 py-3">Fecha</th>
+            <th class="px-4 py-3">Orden</th>
+            <th class="px-4 py-3">Respuesta</th>
+            <th class="px-4 py-3">Llegada</th>
+            <th class="px-4 py-3">Resolución</th>
+            <th class="px-4 py-3 text-right">Calificación</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200">
+          @for (m of metricas(); track m.id) {
+            <tr class="hover:bg-slate-50">
+              <td class="px-4 py-3 text-sm text-slate-600">{{ m.creado_en | date: 'short' }}</td>
+              <td class="px-4 py-3 text-sm text-slate-600">{{ m.orden_id.slice(0, 8) }}</td>
+              <td class="px-4 py-3 text-sm text-slate-600">{{ m.tiempo_respuesta_min ?? 'N/A' }} min</td>
+              <td class="px-4 py-3 text-sm text-slate-600">{{ m.tiempo_llegada_min ?? 'N/A' }} min</td>
+              <td class="px-4 py-3 text-sm text-slate-600">{{ m.tiempo_resolucion_min ?? 'N/A' }} min</td>
+              <td class="px-4 py-3 text-right text-sm text-slate-600">{{ m.calificacion_final ?? 'N/A' }}</td>
+            </tr>
+          }
+          @if (!metricas().length) {
+            <tr>
+              <td class="px-4 py-8 text-center text-sm text-slate-500" colspan="6">No hay métricas.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
   </article>
 </section>

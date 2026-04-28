@@ -6,11 +6,12 @@ import { firstValueFrom } from 'rxjs';
 import { AdminMetrica } from '../../../core/models/admin.model';
 import { AdminApiService } from '../../../core/services/admin-api.service';
 import { getErrorMessage } from '../../../core/utils/http-error.util';
+import { HlmTable } from '@spartan-ng/helm/table';
 
 @Component({
   selector: 'app-admin-metricas-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, HlmTable],
   templateUrl: './admin-metricas-page.component.html',
 })
 export class AdminMetricasPageComponent {

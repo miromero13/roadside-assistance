@@ -3,16 +3,21 @@ import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { lucideMoreVertical } from '@ng-icons/lucide';
 
 import { AdminMecanico, AdminTaller } from '../../../core/models/admin.model';
 import { AdminApiService } from '../../../core/services/admin-api.service';
 import { getErrorMessage } from '../../../core/utils/http-error.util';
+import { HlmButton } from '@spartan-ng/helm/button';
+import { HlmIcon } from '@spartan-ng/helm/icon';
 import { HlmTable } from '@spartan-ng/helm/table';
 
 @Component({
   selector: 'app-admin-operaciones-page',
   standalone: true,
-  imports: [CommonModule, HlmTable, RouterLink],
+  imports: [CommonModule, HlmButton, HlmIcon, HlmTable, NgIcon, RouterLink],
+  providers: [provideIcons({ lucideMoreVertical })],
   templateUrl: './admin-operaciones-page.component.html',
 })
 export class AdminOperacionesPageComponent {
@@ -26,6 +31,7 @@ export class AdminOperacionesPageComponent {
   protected readonly filtroDisponibles = signal<boolean | null>(null);
   protected readonly errorMessage = signal('');
   protected readonly successMessage = signal('');
+  protected readonly actionMenuOpenId = signal<string | null>(null);
 
   constructor() {
     this.filtroDisponibles.set(this.parseFiltro(this.route.snapshot.queryParamMap.get('disponible')));
@@ -44,6 +50,10 @@ export class AdminOperacionesPageComponent {
       relativeTo: this.route,
       queryParams: { disponible: disponible === null ? null : String(disponible) },
     });
+  }
+
+  protected toggleActionMenu(tallerId: string): void {
+    this.actionMenuOpenId.set(this.actionMenuOpenId() === tallerId ? null : tallerId);
   }
 
   protected async toggleDisponibilidad(mecanico: AdminMecanico): Promise<void> {
