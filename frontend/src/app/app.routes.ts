@@ -225,6 +225,13 @@ export const routes: Routes = [
               ),
           },
           {
+            path: 'ordenes/:ordenId',
+            loadComponent: () =>
+              import('./features/admin/pages/admin-ordenes-detalle-page.component').then(
+                (m) => m.AdminOrdenesDetallePageComponent,
+              ),
+          },
+          {
             path: 'finanzas',
             loadComponent: () =>
               import('./features/admin/pages/admin-finanzas-page.component').then(

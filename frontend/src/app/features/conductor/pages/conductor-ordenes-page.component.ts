@@ -3,6 +3,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
+import { HlmIcon } from '@spartan-ng/helm/icon';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideMoreVertical, lucidePlus, lucideX } from '@ng-icons/lucide';
 
@@ -22,7 +23,7 @@ import { HlmTextarea } from '../../../components/textarea/src';
 @Component({
   selector: 'app-conductor-ordenes-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, HlmButton, HlmTable, HlmTextarea, NgIcon, ...HlmSelectImports],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, HlmButton, HlmTable, HlmTextarea, HlmIcon, NgIcon, ...HlmSelectImports],
   providers: [provideIcons({ lucideMoreVertical, lucidePlus, lucideX })],
   templateUrl: './conductor-ordenes-page.component.html',
 })

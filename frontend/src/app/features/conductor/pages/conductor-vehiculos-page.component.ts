@@ -4,6 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideMoreVertical, lucidePlus, lucideX } from '@ng-icons/lucide';
+import { HlmIcon } from '@spartan-ng/helm/icon';
 
 import { Vehiculo } from '../../../core/models/conductor.model';
 import { ConductorApiService } from '../../../core/services/conductor-api.service';
@@ -16,7 +17,7 @@ import { HlmTable } from '../../../components/table/src';
 @Component({
   selector: 'app-conductor-vehiculos-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, HlmButton, HlmInput, HlmTable, NgIcon, ...HlmSelectImports],
+  imports: [CommonModule, ReactiveFormsModule, HlmButton, HlmIcon, HlmInput, HlmTable, NgIcon, ...HlmSelectImports],
   providers: [provideIcons({ lucideMoreVertical, lucidePlus, lucideX })],
   templateUrl: './conductor-vehiculos-page.component.html',
 })

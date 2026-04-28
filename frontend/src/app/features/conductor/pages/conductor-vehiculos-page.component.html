@@ -38,7 +38,7 @@
             <td class="px-4 py-3 text-sm text-slate-600">{{ vehiculo.anio }}</td>
             <td class="px-4 py-3 text-sm text-slate-600">{{ vehiculo.tipo_combustible }}</td>
             <td class="relative px-4 py-3 text-right">
-              <button hlmBtn type="button" variant="ghost" size="icon-sm" (click)="toggleActionMenu(vehiculo.id)">
+              <button hlmBtn class="text-slate-600 hover:text-slate-900" type="button" variant="ghost" size="icon-sm" aria-label="Abrir acciones" (click)="toggleActionMenu(vehiculo.id)">
                 <ng-icon hlm name="lucideMoreVertical" size="sm" />
               </button>
 

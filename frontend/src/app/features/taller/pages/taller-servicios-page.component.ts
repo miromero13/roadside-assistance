@@ -4,6 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideMoreVertical, lucidePlus, lucideX } from '@ng-icons/lucide';
+import { HlmIcon } from '@spartan-ng/helm/icon';
 
 import { TallerServicio } from '../../../core/models/taller.model';
 import { TallerContextService } from '../../../core/services/taller-context.service';
@@ -17,7 +18,7 @@ import { HlmTable } from '../../../components/table/src';
 @Component({
   selector: 'app-taller-servicios-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, HlmButton, HlmInput, HlmTable, NgIcon, ...HlmSelectImports],
+  imports: [CommonModule, ReactiveFormsModule, HlmButton, HlmIcon, HlmInput, HlmTable, NgIcon, ...HlmSelectImports],
   providers: [provideIcons({ lucideMoreVertical, lucidePlus, lucideX })],
   templateUrl: './taller-servicios-page.component.html',
 })

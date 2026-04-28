@@ -4,6 +4,7 @@ import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } 
 import { firstValueFrom } from 'rxjs';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideMoreVertical, lucidePlus, lucideX } from '@ng-icons/lucide';
+import { HlmIcon } from '@spartan-ng/helm/icon';
 
 import { Averia, Vehiculo } from '../../../core/models/conductor.model';
 import { ConductorApiService } from '../../../core/services/conductor-api.service';
@@ -17,7 +18,7 @@ import { HlmTextarea } from '../../../components/textarea/src';
 @Component({
   selector: 'app-conductor-averias-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, HlmButton, HlmInput, HlmTable, HlmTextarea, NgIcon, ...HlmSelectImports],
+  imports: [CommonModule, ReactiveFormsModule, HlmButton, HlmInput, HlmIcon, HlmTable, HlmTextarea, NgIcon, ...HlmSelectImports],
   providers: [provideIcons({ lucideMoreVertical, lucidePlus, lucideX })],
   templateUrl: './conductor-averias-page.component.html',
 })
