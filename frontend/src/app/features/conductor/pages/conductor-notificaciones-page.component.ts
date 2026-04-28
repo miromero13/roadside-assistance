@@ -11,52 +11,7 @@ import { getErrorMessage } from '../../../core/utils/http-error.util';
   selector: 'app-conductor-notificaciones-page',
   standalone: true,
   imports: [CommonModule, RouterLink],
-  template: `
-    <section class="space-y-5">
-      <header class="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 class="text-2xl font-semibold">Notificaciones</h1>
-          <p class="text-sm text-slate-500">Eventos de órdenes, pagos, chat y asignaciones.</p>
-        </div>
-        <div class="flex gap-2">
-          <button class="rounded-lg border border-slate-300 px-3 py-2 text-sm" type="button" (click)="toggleFiltroNoLeidas()">
-            {{ soloNoLeidas() ? 'Ver todas' : 'Solo no leídas' }}
-          </button>
-          <button class="rounded-lg bg-slate-900 px-3 py-2 text-sm text-white" type="button" (click)="marcarTodas()">
-            Marcar todas leídas
-          </button>
-        </div>
-      </header>
-
-      @if (errorMessage()) {
-        <p class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{{ errorMessage() }}</p>
-      }
-
-      <div class="space-y-2">
-        @for (item of notificaciones(); track item.id) {
-          <article class="space-y-2 rounded-xl border p-3" [class.border-slate-200]="item.leida" [class.border-amber-300]="!item.leida">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <p class="font-medium">{{ item.titulo }}</p>
-              <span class="text-xs text-slate-500">{{ item.creado_en | date: 'short' }}</span>
-            </div>
-            <p class="text-sm text-slate-700">{{ item.mensaje }}</p>
-            <div class="flex flex-wrap gap-2 text-sm">
-              @if (item.orden_id) {
-                <a class="rounded-lg border border-slate-300 px-3 py-1" [routerLink]="['/app/conductor/ordenes', item.orden_id]">Ver orden</a>
-              }
-              @if (!item.leida) {
-                <button class="rounded-lg border border-slate-300 px-3 py-1" type="button" (click)="marcarLeida(item.id)">Marcar leída</button>
-              }
-            </div>
-          </article>
-        }
-
-        @if (!notificaciones().length) {
-          <p class="rounded-lg border border-dashed border-slate-300 px-3 py-4 text-sm text-slate-500">No hay notificaciones para mostrar.</p>
-        }
-      </div>
-    </section>
-  `,
+  templateUrl: './conductor-notificaciones-page.component.html',
 })
 export class ConductorNotificacionesPageComponent {
   private readonly api = inject(ConductorApiService);

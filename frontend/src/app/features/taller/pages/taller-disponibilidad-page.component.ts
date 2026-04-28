@@ -2,100 +2,24 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { lucideMoreVertical, lucidePlus, lucideX } from '@ng-icons/lucide';
 
 import { TallerBloqueo, TallerHorario } from '../../../core/models/taller.model';
 import { TallerContextService } from '../../../core/services/taller-context.service';
 import { TallerApiService } from '../../../core/services/taller-api.service';
 import { getErrorMessage } from '../../../core/utils/http-error.util';
+import { HlmButton } from '../../../components/button/src';
+import { HlmInput } from '../../../components/input/src';
+import { HlmSelectImports } from '../../../components/select/src';
+import { HlmTable } from '../../../components/table/src';
 
 @Component({
   selector: 'app-taller-disponibilidad-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
-  template: `
-    <section class="space-y-5">
-      <header>
-        <h1 class="text-2xl font-semibold">Disponibilidad</h1>
-        <p class="text-sm text-slate-500">Gestiona horarios de atención y bloqueos temporales del taller.</p>
-      </header>
-
-      @if (loading()) {
-        <p class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">Cargando disponibilidad del taller...</p>
-      }
-
-      @if (errorMessage()) {
-        <p class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{{ errorMessage() }}</p>
-      }
-
-      <section class="grid gap-4 lg:grid-cols-2">
-        <article class="space-y-3 rounded-xl border border-slate-200 p-4">
-          <h2 class="font-medium">Horarios</h2>
-          <form class="grid gap-2" [formGroup]="horarioForm" (ngSubmit)="crearHorario()">
-            <select class="rounded-lg border border-slate-300 px-3 py-2" formControlName="dia_semana">
-              <option value="lunes">Lunes</option>
-              <option value="martes">Martes</option>
-              <option value="miercoles">Miércoles</option>
-              <option value="jueves">Jueves</option>
-              <option value="viernes">Viernes</option>
-              <option value="sabado">Sábado</option>
-              <option value="domingo">Domingo</option>
-            </select>
-            <div class="grid gap-2 sm:grid-cols-2">
-              <input class="rounded-lg border border-slate-300 px-3 py-2" type="time" formControlName="hora_apertura" />
-              <input class="rounded-lg border border-slate-300 px-3 py-2" type="time" formControlName="hora_cierre" />
-            </div>
-            <label class="flex items-center gap-2 text-sm">
-              <input type="checkbox" formControlName="disponible" />
-              Disponible
-            </label>
-            <button class="w-fit rounded-lg bg-slate-900 px-4 py-2 text-sm text-white" type="submit">Agregar horario</button>
-          </form>
-
-          <div class="space-y-2">
-            @for (horario of horarios(); track horario.id) {
-              <article class="flex items-center justify-between gap-2 rounded-lg bg-slate-50 p-2 text-sm">
-                <div>
-                  <p class="font-medium">{{ horario.dia_semana }} · {{ horario.hora_apertura }} - {{ horario.hora_cierre }}</p>
-                  <p class="text-slate-500">Disponible: {{ horario.disponible ? 'Sí' : 'No' }}</p>
-                </div>
-                <button class="rounded-lg border border-red-300 px-2 py-1 text-red-700" type="button" (click)="eliminarHorario(horario.id)">Eliminar</button>
-              </article>
-            }
-          </div>
-        </article>
-
-        <article class="space-y-3 rounded-xl border border-slate-200 p-4">
-          <h2 class="font-medium">Bloqueos</h2>
-          <form class="grid gap-2" [formGroup]="bloqueoForm" (ngSubmit)="crearBloqueo()">
-            <div class="grid gap-2 sm:grid-cols-2">
-              <label class="space-y-1 text-sm">
-                <span>Inicio</span>
-                <input class="w-full rounded-lg border border-slate-300 px-3 py-2" type="datetime-local" formControlName="fecha_inicio" />
-              </label>
-              <label class="space-y-1 text-sm">
-                <span>Fin</span>
-                <input class="w-full rounded-lg border border-slate-300 px-3 py-2" type="datetime-local" formControlName="fecha_fin" />
-              </label>
-            </div>
-            <input class="rounded-lg border border-slate-300 px-3 py-2" placeholder="Motivo" formControlName="motivo" />
-            <button class="w-fit rounded-lg bg-slate-900 px-4 py-2 text-sm text-white" type="submit">Agregar bloqueo</button>
-          </form>
-
-          <div class="space-y-2">
-            @for (bloqueo of bloqueos(); track bloqueo.id) {
-              <article class="flex items-center justify-between gap-2 rounded-lg bg-slate-50 p-2 text-sm">
-                <div>
-                  <p class="font-medium">{{ bloqueo.fecha_inicio | date: 'short' }} - {{ bloqueo.fecha_fin | date: 'short' }}</p>
-                  <p class="text-slate-500">{{ bloqueo.motivo || 'Sin motivo' }}</p>
-                </div>
-                <button class="rounded-lg border border-red-300 px-2 py-1 text-red-700" type="button" (click)="eliminarBloqueo(bloqueo.id)">Eliminar</button>
-              </article>
-            }
-          </div>
-        </article>
-      </section>
-    </section>
-  `,
+  imports: [CommonModule, ReactiveFormsModule, HlmButton, HlmInput, HlmTable, NgIcon, ...HlmSelectImports],
+  providers: [provideIcons({ lucideMoreVertical, lucidePlus, lucideX })],
+  templateUrl: './taller-disponibilidad-page.component.html',
 })
 export class TallerDisponibilidadPageComponent {
   private readonly api = inject(TallerApiService);
@@ -106,6 +30,10 @@ export class TallerDisponibilidadPageComponent {
   protected readonly bloqueos = signal<TallerBloqueo[]>([]);
   protected readonly errorMessage = signal('');
   protected readonly loading = signal(false);
+  protected readonly horarioModalOpen = signal(false);
+  protected readonly bloqueoModalOpen = signal(false);
+  protected readonly horarioActionMenuOpenId = signal<string | null>(null);
+  protected readonly bloqueoActionMenuOpenId = signal<string | null>(null);
 
   protected readonly horarioForm = this.fb.nonNullable.group({
     dia_semana: this.fb.nonNullable.control('lunes'),
@@ -124,6 +52,39 @@ export class TallerDisponibilidadPageComponent {
     void this.resolveAndLoad();
   }
 
+  protected openHorarioModal(): void {
+    this.horarioActionMenuOpenId.set(null);
+    this.horarioForm.reset({
+      dia_semana: 'lunes',
+      hora_apertura: '08:00',
+      hora_cierre: '18:00',
+      disponible: true,
+    });
+    this.horarioModalOpen.set(true);
+  }
+
+  protected closeHorarioModal(): void {
+    this.horarioModalOpen.set(false);
+  }
+
+  protected openBloqueoModal(): void {
+    this.bloqueoActionMenuOpenId.set(null);
+    this.bloqueoForm.reset({ fecha_inicio: '', fecha_fin: '', motivo: '' });
+    this.bloqueoModalOpen.set(true);
+  }
+
+  protected closeBloqueoModal(): void {
+    this.bloqueoModalOpen.set(false);
+  }
+
+  protected toggleHorarioActionMenu(horarioId: string): void {
+    this.horarioActionMenuOpenId.set(this.horarioActionMenuOpenId() === horarioId ? null : horarioId);
+  }
+
+  protected toggleBloqueoActionMenu(bloqueoId: string): void {
+    this.bloqueoActionMenuOpenId.set(this.bloqueoActionMenuOpenId() === bloqueoId ? null : bloqueoId);
+  }
+
   protected async crearHorario(): Promise<void> {
     const tallerId = await this.ensureTallerId();
     if (!tallerId) {
@@ -138,6 +99,7 @@ export class TallerDisponibilidadPageComponent {
     try {
       const raw = this.horarioForm.getRawValue();
       await firstValueFrom(this.api.createHorario(tallerId, raw));
+      this.closeHorarioModal();
       await this.cargarDisponibilidad(tallerId);
     } catch (error) {
       this.errorMessage.set(getErrorMessage(error, 'No se pudo crear el horario.'));
@@ -152,6 +114,7 @@ export class TallerDisponibilidadPageComponent {
     this.errorMessage.set('');
     try {
       await firstValueFrom(this.api.deleteHorario(tallerId, horarioId));
+      this.horarioActionMenuOpenId.set(null);
       await this.cargarDisponibilidad(tallerId);
     } catch (error) {
       this.errorMessage.set(getErrorMessage(error, 'No se pudo eliminar el horario.'));
@@ -178,6 +141,7 @@ export class TallerDisponibilidadPageComponent {
           motivo: raw.motivo,
         }),
       );
+      this.closeBloqueoModal();
       await this.cargarDisponibilidad(tallerId);
     } catch (error) {
       this.errorMessage.set(getErrorMessage(error, 'No se pudo crear el bloqueo.'));
@@ -192,6 +156,7 @@ export class TallerDisponibilidadPageComponent {
     this.errorMessage.set('');
     try {
       await firstValueFrom(this.api.deleteBloqueo(tallerId, bloqueoId));
+      this.bloqueoActionMenuOpenId.set(null);
       await this.cargarDisponibilidad(tallerId);
     } catch (error) {
       this.errorMessage.set(getErrorMessage(error, 'No se pudo eliminar el bloqueo.'));

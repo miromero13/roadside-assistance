@@ -204,6 +204,13 @@ export const routes: Routes = [
               ),
           },
           {
+            path: 'operaciones/:tallerId',
+            loadComponent: () =>
+              import('./features/admin/pages/admin-operaciones-detalle-page.component').then(
+                (m) => m.AdminOperacionesDetallePageComponent,
+              ),
+          },
+          {
             path: 'catalogo',
             loadComponent: () =>
               import('./features/admin/pages/admin-catalogo-page.component').then(

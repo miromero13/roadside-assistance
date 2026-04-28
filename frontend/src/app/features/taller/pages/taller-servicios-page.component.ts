@@ -2,71 +2,24 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { lucideMoreVertical, lucidePlus, lucideX } from '@ng-icons/lucide';
 
 import { TallerServicio } from '../../../core/models/taller.model';
 import { TallerContextService } from '../../../core/services/taller-context.service';
 import { TallerApiService } from '../../../core/services/taller-api.service';
 import { getErrorMessage } from '../../../core/utils/http-error.util';
+import { HlmButton } from '../../../components/button/src';
+import { HlmInput } from '../../../components/input/src';
+import { HlmSelectImports } from '../../../components/select/src';
+import { HlmTable } from '../../../components/table/src';
 
 @Component({
   selector: 'app-taller-servicios-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
-  template: `
-    <section class="space-y-5">
-      <header>
-        <h1 class="text-2xl font-semibold">Servicios del taller</h1>
-        <p class="text-sm text-slate-500">Administra el catálogo de servicios que ofrece tu taller.</p>
-      </header>
-
-      @if (loading()) {
-        <p class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">Cargando datos del taller...</p>
-      }
-
-      <form class="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 sm:grid-cols-2" [formGroup]="form" (ngSubmit)="crearServicio()">
-        <select class="rounded-lg border border-slate-300 px-3 py-2" formControlName="categoria_id">
-          <option value="">Selecciona categoría</option>
-          @for (categoria of categorias(); track categoria.id) {
-            <option [value]="categoria.id">{{ categoria.nombre }}</option>
-          }
-        </select>
-        <input class="rounded-lg border border-slate-300 px-3 py-2" placeholder="Descripción" formControlName="descripcion" />
-        <input class="rounded-lg border border-slate-300 px-3 py-2" type="number" placeholder="Precio min" formControlName="precio_base_min" />
-        <input class="rounded-lg border border-slate-300 px-3 py-2" type="number" placeholder="Precio max" formControlName="precio_base_max" />
-        <input class="rounded-lg border border-slate-300 px-3 py-2" type="number" placeholder="Tiempo estimado (min)" formControlName="tiempo_estimado_min" />
-        <label class="flex items-center gap-2 text-sm">
-          <input type="checkbox" formControlName="servicio_movil" />
-          Servicio móvil
-        </label>
-        <div class="sm:col-span-2">
-          <button class="rounded-lg bg-slate-900 px-4 py-2 text-sm text-white" type="submit">Crear servicio</button>
-        </div>
-      </form>
-
-      @if (errorMessage()) {
-        <p class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{{ errorMessage() }}</p>
-      }
-
-      <div class="space-y-2">
-        @for (servicio of servicios(); track servicio.id) {
-          <article class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 p-3">
-            <div class="text-sm">
-              <p class="font-medium">{{ servicio.descripcion || 'Sin descripción' }}</p>
-              <p class="text-slate-500">Categoría: {{ servicio.categoria_id }} · Activo: {{ servicio.activo ? 'Sí' : 'No' }}</p>
-              <p class="text-slate-700">Bs {{ servicio.precio_base_min || '-' }} - {{ servicio.precio_base_max || '-' }}</p>
-            </div>
-            <button class="rounded-lg border border-red-300 px-3 py-1 text-sm text-red-700" type="button" (click)="eliminarServicio(servicio.id)">
-              Desactivar
-            </button>
-          </article>
-        }
-
-        @if (!servicios().length) {
-          <p class="rounded-lg border border-dashed border-slate-300 px-3 py-4 text-sm text-slate-500">No hay servicios creados en tu taller.</p>
-        }
-      </div>
-    </section>
-  `,
+  imports: [CommonModule, ReactiveFormsModule, HlmButton, HlmInput, HlmTable, NgIcon, ...HlmSelectImports],
+  providers: [provideIcons({ lucideMoreVertical, lucidePlus, lucideX })],
+  templateUrl: './taller-servicios-page.component.html',
 })
 export class TallerServiciosPageComponent {
   private readonly api = inject(TallerApiService);
@@ -77,6 +30,8 @@ export class TallerServiciosPageComponent {
   protected readonly servicios = signal<TallerServicio[]>([]);
   protected readonly errorMessage = signal('');
   protected readonly loading = signal(false);
+  protected readonly modalOpen = signal(false);
+  protected readonly actionMenuOpenId = signal<string | null>(null);
 
   protected readonly form = this.fb.nonNullable.group({
     categoria_id: ['', Validators.required],
@@ -89,6 +44,27 @@ export class TallerServiciosPageComponent {
 
   constructor() {
     void this.resolveAndLoad();
+  }
+
+  protected openCreateModal(): void {
+    this.actionMenuOpenId.set(null);
+    this.form.reset({
+      categoria_id: '',
+      descripcion: '',
+      precio_base_min: 0,
+      precio_base_max: 0,
+      tiempo_estimado_min: 30,
+      servicio_movil: true,
+    });
+    this.modalOpen.set(true);
+  }
+
+  protected closeModal(): void {
+    this.modalOpen.set(false);
+  }
+
+  protected toggleActionMenu(servicioId: string): void {
+    this.actionMenuOpenId.set(this.actionMenuOpenId() === servicioId ? null : servicioId);
   }
 
   protected async crearServicio(): Promise<void> {
@@ -104,6 +80,7 @@ export class TallerServiciosPageComponent {
     this.errorMessage.set('');
     try {
       await firstValueFrom(this.api.createServicio(tallerId, this.form.getRawValue()));
+      this.closeModal();
       await this.cargarServicios(tallerId);
     } catch (error) {
       this.errorMessage.set(getErrorMessage(error, 'No se pudo crear el servicio.'));
@@ -118,6 +95,7 @@ export class TallerServiciosPageComponent {
     this.errorMessage.set('');
     try {
       await firstValueFrom(this.api.deleteServicio(servicioId));
+      this.actionMenuOpenId.set(null);
       await this.cargarServicios(tallerId);
     } catch (error) {
       this.errorMessage.set(getErrorMessage(error, 'No se pudo desactivar el servicio.'));

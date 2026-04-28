@@ -11,53 +11,7 @@ import { getErrorMessage } from '../../../core/utils/http-error.util';
   selector: 'app-admin-usuarios-page',
   standalone: true,
   imports: [CommonModule],
-  template: `
-    <section class="space-y-5">
-      <header>
-        <h1 class="text-2xl font-semibold">Usuarios y roles</h1>
-        <p class="text-sm text-slate-500">Administra el rol operativo de los usuarios registrados.</p>
-      </header>
-
-      <div class="flex flex-wrap gap-2">
-        <button class="rounded-lg border px-3 py-1 text-sm" [class.bg-slate-900]="filtroRol() === ''" [class.text-white]="filtroRol() === ''" type="button" (click)="setFiltro('')">Todos</button>
-        <button class="rounded-lg border px-3 py-1 text-sm" [class.bg-slate-900]="filtroRol() === 'conductor'" [class.text-white]="filtroRol() === 'conductor'" type="button" (click)="setFiltro('conductor')">Conductor</button>
-        <button class="rounded-lg border px-3 py-1 text-sm" [class.bg-slate-900]="filtroRol() === 'taller'" [class.text-white]="filtroRol() === 'taller'" type="button" (click)="setFiltro('taller')">Taller</button>
-        <button class="rounded-lg border px-3 py-1 text-sm" [class.bg-slate-900]="filtroRol() === 'mecanico'" [class.text-white]="filtroRol() === 'mecanico'" type="button" (click)="setFiltro('mecanico')">Mecánico</button>
-        <button class="rounded-lg border px-3 py-1 text-sm" [class.bg-slate-900]="filtroRol() === 'admin'" [class.text-white]="filtroRol() === 'admin'" type="button" (click)="setFiltro('admin')">Admin</button>
-      </div>
-
-      @if (errorMessage()) {
-        <p class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{{ errorMessage() }}</p>
-      }
-
-      @if (successMessage()) {
-        <p class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{{ successMessage() }}</p>
-      }
-
-      <div class="space-y-2">
-        @for (user of usuariosFiltrados(); track user.id) {
-          <article class="grid gap-2 rounded-xl border border-slate-200 p-3 sm:grid-cols-[1fr_auto] sm:items-center">
-            <div>
-              <p class="font-medium">{{ user.nombre }} {{ user.apellido }}</p>
-              <p class="text-sm text-slate-500">{{ user.email }} · {{ user.telefono }} · {{ user.rol }}</p>
-            </div>
-            <div class="flex items-center gap-2">
-              <select class="rounded-lg border border-slate-300 px-3 py-2 text-sm" [value]="user.rol" [disabled]="currentUserId() === user.id" (change)="actualizarRol(user, $any($event.target).value)">
-                <option value="conductor">conductor</option>
-                <option value="taller">taller</option>
-                <option value="mecanico">mecanico</option>
-                <option value="admin">admin</option>
-              </select>
-            </div>
-          </article>
-        }
-
-        @if (!usuariosFiltrados().length) {
-          <p class="rounded-lg border border-dashed border-slate-300 px-3 py-4 text-sm text-slate-500">No hay usuarios para el filtro seleccionado.</p>
-        }
-      </div>
-    </section>
-  `,
+  templateUrl: './admin-usuarios-page.component.html',
 })
 export class AdminUsuariosPageComponent {
   private readonly api = inject(AdminApiService);

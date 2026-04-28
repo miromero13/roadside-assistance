@@ -1,0 +1,109 @@
+<section class="space-y-5">
+  <header class="flex flex-wrap items-start justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-semibold">Mis vehículos</h1>
+      <p class="text-sm text-slate-500">Registra y administra los vehículos vinculados a tu cuenta.</p>
+    </div>
+
+    <button hlmBtn type="button" (click)="openCreateModal()">
+      <ng-icon hlm name="lucidePlus" size="sm" />
+      Crear vehículo
+    </button>
+  </header>
+
+  @if (errorMessage()) {
+    <p class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{{ errorMessage() }}</p>
+  }
+
+  <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+    <table hlmTable>
+      <thead class="bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
+        <tr>
+          <th class="px-4 py-3">Vehículo</th>
+          <th class="px-4 py-3">Placa</th>
+          <th class="px-4 py-3">Año</th>
+          <th class="px-4 py-3">Combustible</th>
+          <th class="px-4 py-3 text-right">Acciones</th>
+        </tr>
+      </thead>
+
+      <tbody class="divide-y divide-slate-200">
+        @for (vehiculo of vehiculos(); track vehiculo.id) {
+          <tr class="hover:bg-slate-50">
+            <td class="px-4 py-3">
+              <p class="font-medium text-slate-900">{{ vehiculo.marca }} {{ vehiculo.modelo }}</p>
+              <p class="text-sm text-slate-500">Color: {{ vehiculo.color || 'Sin color' }}</p>
+            </td>
+            <td class="px-4 py-3 text-sm text-slate-600">{{ vehiculo.placa }}</td>
+            <td class="px-4 py-3 text-sm text-slate-600">{{ vehiculo.anio }}</td>
+            <td class="px-4 py-3 text-sm text-slate-600">{{ vehiculo.tipo_combustible }}</td>
+            <td class="relative px-4 py-3 text-right">
+              <button hlmBtn type="button" variant="ghost" size="icon-sm" (click)="toggleActionMenu(vehiculo.id)">
+                <ng-icon hlm name="lucideMoreVertical" size="sm" />
+              </button>
+
+              @if (actionMenuOpenId() === vehiculo.id) {
+                <div class="absolute right-4 top-11 z-20 min-w-44 rounded-xl border border-slate-200 bg-white p-1 shadow-lg">
+                  <button class="flex w-full items-center rounded-lg px-3 py-2 text-left text-sm hover:bg-slate-100" type="button" (click)="startEdit(vehiculo)">
+                    Editar
+                  </button>
+                  <button class="flex w-full items-center rounded-lg px-3 py-2 text-left text-sm text-red-700 hover:bg-red-50" type="button" (click)="deleteVehiculo(vehiculo.id)">
+                    Eliminar
+                  </button>
+                </div>
+              }
+            </td>
+          </tr>
+        }
+
+        @if (!vehiculos().length) {
+          <tr>
+            <td class="px-4 py-8 text-center text-sm text-slate-500" colspan="5">Aún no tienes vehículos registrados.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (modalOpen()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4" (click)="closeModal()">
+      <div class="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl" (click)="$event.stopPropagation()">
+        <div class="mb-5 flex items-start justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-semibold">{{ editingId() ? 'Editar vehículo' : 'Crear vehículo' }}</h2>
+            <p class="text-sm text-slate-500">Completa los datos del vehículo.</p>
+          </div>
+          <button hlmBtn type="button" variant="ghost" size="icon-sm" (click)="closeModal()">
+            <ng-icon hlm name="lucideX" size="sm" />
+          </button>
+        </div>
+
+        <form class="grid gap-3 sm:grid-cols-2" [formGroup]="form" (ngSubmit)="saveVehiculo()">
+          <input hlmInput placeholder="Marca" formControlName="marca" />
+          <input hlmInput placeholder="Modelo" formControlName="modelo" />
+          <input hlmInput placeholder="Año" type="number" formControlName="anio" />
+          <input hlmInput placeholder="Placa" formControlName="placa" />
+          <input hlmInput placeholder="Color" formControlName="color" />
+
+          <div hlmSelect [formControl]="form.controls.tipo_combustible" class="sm:col-span-2">
+            <button hlmSelectTrigger type="button">
+              <hlm-select-value placeholder="Selecciona combustible"></hlm-select-value>
+            </button>
+            <hlm-select-content>
+              <hlm-select-item value="gasolina">Gasolina</hlm-select-item>
+              <hlm-select-item value="diesel">Diesel</hlm-select-item>
+              <hlm-select-item value="electrico">Eléctrico</hlm-select-item>
+              <hlm-select-item value="hibrido">Híbrido</hlm-select-item>
+              <hlm-select-item value="gas">Gas</hlm-select-item>
+            </hlm-select-content>
+          </div>
+
+          <div class="sm:col-span-2 flex justify-end gap-2 pt-2">
+            <button hlmBtn type="button" variant="outline" (click)="closeModal()">Cancelar</button>
+            <button hlmBtn type="submit" [disabled]="loading()">{{ editingId() ? 'Actualizar' : 'Crear' }}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</section>

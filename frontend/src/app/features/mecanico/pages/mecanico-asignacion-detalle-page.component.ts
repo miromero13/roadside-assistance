@@ -17,72 +17,7 @@ import { getErrorMessage } from '../../../core/utils/http-error.util';
   selector: 'app-mecanico-asignacion-detalle-page',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink],
-  template: `
-    <section class="space-y-5">
-      <a class="inline-flex items-center rounded-lg border border-slate-300 px-3 py-1 text-sm" routerLink="/app/mecanico/asignaciones">← Volver a asignaciones</a>
-
-      <header>
-        <h1 class="text-2xl font-semibold">Detalle de asignación</h1>
-        <p class="text-sm text-slate-500">Actualiza tu estado operativo y registra observaciones técnicas.</p>
-      </header>
-
-      @if (errorMessage()) {
-        <p class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{{ errorMessage() }}</p>
-      }
-
-      @if (successMessage()) {
-        <p class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{{ successMessage() }}</p>
-      }
-
-      @if (asignacion()) {
-        <article class="space-y-2 rounded-xl border border-slate-200 p-4">
-          <p class="font-medium">Asignación {{ asignacion()!.id.slice(0, 8) }} · {{ asignacion()!.estado }}</p>
-          <p class="text-sm text-slate-500">Orden: {{ asignacion()!.orden_id }}</p>
-          @if (asignacion()!.notas) {
-            <p class="text-sm text-slate-700">{{ asignacion()!.notas }}</p>
-          }
-        </article>
-      }
-
-      @if (orden()) {
-        <article class="space-y-2 rounded-xl border border-slate-200 p-4">
-          <h2 class="font-medium">Incidente asignado</h2>
-          <p class="text-sm">Orden {{ orden()!.id.slice(0, 8) }} · Estado {{ orden()!.estado }}</p>
-          <p class="text-sm text-slate-600">Avería: {{ orden()!.averia_id }}</p>
-          <p class="text-sm text-slate-600">Taller: {{ orden()!.taller_id }}</p>
-          <p class="text-sm text-slate-600">Categoría: {{ orden()!.categoria_id }}</p>
-          <p class="text-sm text-slate-600">ETA llegada: {{ orden()!.tiempo_estimado_llegada_min ?? 'N/A' }} min</p>
-          @if (orden()!.notas_conductor) {
-            <p class="text-sm text-slate-700">Nota conductor: {{ orden()!.notas_conductor }}</p>
-          }
-          @if (orden()!.notas_taller) {
-            <p class="text-sm text-slate-700">Nota taller: {{ orden()!.notas_taller }}</p>
-          }
-        </article>
-      }
-
-      <form class="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4" [formGroup]="estadoForm" (ngSubmit)="actualizarEstado()">
-        <h2 class="font-medium">Actualizar estado operativo</h2>
-        <select class="rounded-lg border border-slate-300 px-3 py-2" formControlName="estado">
-          @for (estado of estadosDisponibles(); track estado) {
-            <option [value]="estado">{{ estado }}</option>
-          }
-        </select>
-        <textarea class="rounded-lg border border-slate-300 px-3 py-2" rows="2" placeholder="Observación técnica" formControlName="notas"></textarea>
-        <button class="w-fit rounded-lg bg-slate-900 px-4 py-2 text-sm text-white" type="submit">Guardar estado</button>
-      </form>
-
-      <article class="space-y-2 rounded-xl border border-slate-200 p-4">
-        <h2 class="font-medium">Historial de la orden</h2>
-        @for (item of historial(); track item.id) {
-          <p class="text-sm text-slate-600">{{ item.creado_en | date: 'short' }} · {{ item.estado_anterior ?? '-' }} → {{ item.estado_nuevo }} · {{ item.observacion ?? 'Sin observación' }}</p>
-        }
-        @if (!historial().length) {
-          <p class="text-sm text-slate-500">No hay historial disponible.</p>
-        }
-      </article>
-    </section>
-  `,
+  templateUrl: './mecanico-asignacion-detalle-page.component.html',
 })
 export class MecanicoAsignacionDetallePageComponent {
   private readonly route = inject(ActivatedRoute);

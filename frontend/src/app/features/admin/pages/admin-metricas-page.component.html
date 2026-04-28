@@ -1,0 +1,30 @@
+<section class="space-y-5">
+  <header>
+    <h1 class="text-2xl font-semibold">Métricas operativas</h1>
+    <p class="text-sm text-slate-500">Consulta indicadores de servicio y recalcula por orden.</p>
+  </header>
+
+  <form class="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 sm:grid-cols-[1fr_auto]" [formGroup]="recalculoForm" (ngSubmit)="recalcularMetrica()">
+    <input class="rounded-lg border border-slate-300 px-3 py-2" placeholder="Orden ID para recalcular" formControlName="ordenId" />
+    <button class="w-fit rounded-lg bg-slate-900 px-4 py-2 text-sm text-white" type="submit">Recalcular</button>
+  </form>
+
+  @if (errorMessage()) {
+    <p class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{{ errorMessage() }}</p>
+  }
+  @if (successMessage()) {
+    <p class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{{ successMessage() }}</p>
+  }
+
+  <article class="space-y-2 rounded-xl border border-slate-200 p-4">
+    <h2 class="font-medium">Listado de métricas ({{ metricas().length }})</h2>
+    @for (m of metricas(); track m.id) {
+      <p class="text-sm text-slate-600">
+        {{ m.creado_en | date: 'short' }} · orden {{ m.orden_id }} · resp {{ m.tiempo_respuesta_min ?? 'N/A' }} min ·
+        llegada {{ m.tiempo_llegada_min ?? 'N/A' }} min ·
+        resolución {{ m.tiempo_resolucion_min ?? 'N/A' }} min ·
+        calif {{ m.calificacion_final ?? 'N/A' }}
+      </p>
+    }
+  </article>
+</section>

@@ -1,0 +1,31 @@
+<section class="space-y-5">
+  <header>
+    <h1 class="text-2xl font-semibold">Comisiones del taller</h1>
+    <p class="text-sm text-slate-500">Consulta y paga comisiones pendientes.</p>
+  </header>
+
+  @if (errorMessage()) {
+    <p class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{{ errorMessage() }}</p>
+  }
+
+  <div class="space-y-2">
+    @for (comision of comisiones(); track comision.id) {
+      <article class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 p-3">
+        <div class="text-sm">
+          <p class="font-medium">Comisión {{ comision.id.slice(0, 8) }} · {{ comision.estado }}</p>
+          <p class="text-slate-500">Orden: {{ comision.orden_id }} · Pago: {{ comision.pago_id }}</p>
+          <p class="text-slate-700">Monto comisión: Bs {{ comision.monto_comision }}</p>
+        </div>
+        @if (comision.estado === 'pendiente') {
+          <button class="rounded-lg bg-slate-900 px-3 py-2 text-sm text-white" type="button" (click)="pagar(comision.id)">
+            Pagar comisión
+          </button>
+        }
+      </article>
+    }
+
+    @if (!comisiones().length) {
+      <p class="rounded-lg border border-dashed border-slate-300 px-3 py-4 text-sm text-slate-500">No tienes comisiones registradas.</p>
+    }
+  </div>
+</section>

@@ -1,0 +1,52 @@
+<section class="space-y-5">
+  <header class="space-y-1">
+    <h1 class="text-2xl font-semibold">Órdenes del taller</h1>
+    <p class="text-sm text-slate-500">Gestiona aceptación, rechazo y seguimiento operativo.</p>
+  </header>
+
+  <div class="flex flex-wrap gap-2">
+    <button class="rounded-lg border px-3 py-1 text-sm" [class.bg-slate-900]="!estadoFiltro()" [class.text-white]="!estadoFiltro()" type="button" (click)="setFiltro('')">Todas</button>
+    <button class="rounded-lg border px-3 py-1 text-sm" [class.bg-slate-900]="estadoFiltro()==='pendiente_respuesta'" [class.text-white]="estadoFiltro()==='pendiente_respuesta'" type="button" (click)="setFiltro('pendiente_respuesta')">Pendientes</button>
+    <button class="rounded-lg border px-3 py-1 text-sm" [class.bg-slate-900]="estadoFiltro()==='aceptada'" [class.text-white]="estadoFiltro()==='aceptada'" type="button" (click)="setFiltro('aceptada')">Aceptadas</button>
+    <button class="rounded-lg border px-3 py-1 text-sm" [class.bg-slate-900]="estadoFiltro()==='en_proceso'" [class.text-white]="estadoFiltro()==='en_proceso'" type="button" (click)="setFiltro('en_proceso')">En proceso</button>
+  </div>
+
+  @if (errorMessage()) {
+    <p class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{{ errorMessage() }}</p>
+  }
+
+  <div class="space-y-2">
+    @for (orden of ordenes(); track orden.id) {
+      <article class="space-y-2 rounded-xl border border-slate-200 p-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <p class="font-medium">Orden {{ orden.id.slice(0, 8) }} · {{ orden.estado }}</p>
+          <span class="text-xs text-slate-500">{{ orden.creado_en | date: 'short' }}</span>
+        </div>
+        <p class="text-sm text-slate-500">Avería: {{ orden.averia_id }} · Categoría: {{ orden.categoria_id }}</p>
+        @if (orden.notas_conductor) {
+          <p class="text-sm text-slate-700">{{ orden.notas_conductor }}</p>
+        }
+
+        <div class="flex flex-wrap gap-2">
+          <a class="rounded-lg border border-slate-300 px-3 py-1 text-sm" [routerLink]="['/app/taller/ordenes', orden.id]">Ver detalle</a>
+          @if (orden.estado === 'pendiente_respuesta') {
+            <button class="rounded-lg bg-emerald-700 px-3 py-1 text-sm text-white" type="button" (click)="aceptarOrden(orden.id)">Aceptar</button>
+            <button class="rounded-lg border border-red-300 px-3 py-1 text-sm text-red-700" type="button" (click)="setRechazoTarget(orden.id)">Rechazar</button>
+          }
+        </div>
+
+        @if (rechazoTargetId() === orden.id) {
+          <form class="mt-2 flex flex-wrap gap-2" [formGroup]="rechazoForm" (ngSubmit)="rechazarOrden()">
+            <input class="min-w-[260px] flex-1 rounded-lg border border-slate-300 px-2 py-1 text-sm" formControlName="motivo" placeholder="Motivo de rechazo" />
+            <button class="rounded-lg bg-slate-900 px-3 py-1 text-sm text-white" type="submit">Confirmar</button>
+            <button class="rounded-lg border border-slate-300 px-3 py-1 text-sm" type="button" (click)="clearRechazoTarget()">Cancelar</button>
+          </form>
+        }
+      </article>
+    }
+
+    @if (!ordenes().length) {
+      <p class="rounded-lg border border-dashed border-slate-300 px-3 py-4 text-sm text-slate-500">No hay órdenes para el filtro seleccionado.</p>
+    }
+  </div>
+</section>

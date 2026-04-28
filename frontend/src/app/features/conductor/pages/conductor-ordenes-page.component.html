@@ -1,0 +1,153 @@
+<section class="space-y-5">
+  <header class="flex flex-wrap items-start justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-semibold">Órdenes de servicio</h1>
+      <p class="text-sm text-slate-500">Busca talleres candidatos y crea una orden para tu avería.</p>
+    </div>
+
+    <button hlmBtn type="button" (click)="openCreateModal()">
+      <ng-icon hlm name="lucidePlus" size="sm" />
+      Crear orden
+    </button>
+  </header>
+
+  @if (errorMessage()) {
+    <p class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{{ errorMessage() }}</p>
+  }
+
+  <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+    <table hlmTable>
+      <thead class="bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
+        <tr>
+          <th class="px-4 py-3">Orden</th>
+          <th class="px-4 py-3">Taller</th>
+          <th class="px-4 py-3">Estado</th>
+          <th class="px-4 py-3">Fecha</th>
+          <th class="px-4 py-3 text-right">Acciones</th>
+        </tr>
+      </thead>
+
+      <tbody class="divide-y divide-slate-200">
+        @for (orden of ordenes(); track orden.id) {
+          <tr class="hover:bg-slate-50">
+            <td class="px-4 py-3">
+              <p class="font-medium text-slate-900">Orden {{ orden.id.slice(0, 8) }}</p>
+              <p class="text-sm text-slate-500">Avería: {{ orden.averia_id }}</p>
+            </td>
+            <td class="px-4 py-3 text-sm text-slate-600">{{ orden.taller_id }}</td>
+            <td class="px-4 py-3 text-sm text-slate-600">{{ orden.estado }}</td>
+            <td class="px-4 py-3 text-sm text-slate-600">{{ orden.creado_en | date: 'short' }}</td>
+            <td class="relative px-4 py-3 text-right">
+              <button hlmBtn type="button" variant="ghost" size="icon-sm" (click)="toggleActionMenu(orden.id)">
+                <ng-icon hlm name="lucideMoreVertical" size="sm" />
+              </button>
+
+              @if (actionMenuOpenId() === orden.id) {
+                <div class="absolute right-4 top-11 z-20 min-w-44 rounded-xl border border-slate-200 bg-white p-1 shadow-lg">
+                  <a class="flex w-full items-center rounded-lg px-3 py-2 text-left text-sm hover:bg-slate-100" [routerLink]="['/app/conductor/ordenes', orden.id]">
+                    Ver detalle
+                  </a>
+                  @if (orden.estado === 'pendiente_respuesta' || orden.estado === 'aceptada' || orden.estado === 'tecnico_asignado') {
+                    <button class="flex w-full items-center rounded-lg px-3 py-2 text-left text-sm text-red-700 hover:bg-red-50" type="button" (click)="cancelarOrden(orden.id)">
+                      Cancelar
+                    </button>
+                  }
+                </div>
+              }
+            </td>
+          </tr>
+        }
+
+        @if (!ordenes().length) {
+          <tr>
+            <td class="px-4 py-8 text-center text-sm text-slate-500" colspan="5">Aún no tienes órdenes registradas.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (createModalOpen()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4" (click)="closeCreateModal()">
+      <div class="w-full max-w-4xl rounded-2xl bg-white p-6 shadow-2xl" (click)="$event.stopPropagation()">
+        <div class="mb-5 flex items-start justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-semibold">Crear orden</h2>
+            <p class="text-sm text-slate-500">Selecciona avería y categoría, luego busca un taller candidato.</p>
+          </div>
+          <button hlmBtn type="button" variant="ghost" size="icon-sm" (click)="closeCreateModal()">
+            <ng-icon hlm name="lucideX" size="sm" />
+          </button>
+        </div>
+
+        <form class="grid gap-3 sm:grid-cols-2" [formGroup]="crearOrdenForm" (ngSubmit)="buscarCandidatos()">
+          <div hlmSelect [formControl]="crearOrdenForm.controls.averia_id">
+            <button hlmSelectTrigger type="button">
+              <hlm-select-value placeholder="Selecciona avería"></hlm-select-value>
+            </button>
+            <hlm-select-content>
+              <hlm-select-item value="">Selecciona avería</hlm-select-item>
+              @for (averia of averias(); track averia.id) {
+                <hlm-select-item [value]="averia.id">{{ averia.descripcion_conductor }}</hlm-select-item>
+              }
+            </hlm-select-content>
+          </div>
+
+          <div hlmSelect [formControl]="crearOrdenForm.controls.categoria_id">
+            <button hlmSelectTrigger type="button">
+              <hlm-select-value placeholder="Selecciona categoría"></hlm-select-value>
+            </button>
+            <hlm-select-content>
+              <hlm-select-item value="">Selecciona categoría</hlm-select-item>
+              @for (categoria of categorias(); track categoria.id) {
+                <hlm-select-item [value]="categoria.id">{{ categoria.nombre }}</hlm-select-item>
+              }
+            </hlm-select-content>
+          </div>
+
+          <label class="flex items-center gap-2 text-sm sm:col-span-2">
+            <input type="checkbox" formControlName="es_domicilio" />
+            Solicitar atención a domicilio
+          </label>
+
+          <textarea hlmTextarea class="sm:col-span-2" rows="2" placeholder="Notas para el taller" formControlName="notas_conductor"></textarea>
+
+          <div class="sm:col-span-2 flex justify-end gap-2 pt-2">
+            <button hlmBtn type="button" variant="outline" (click)="closeCreateModal()">Cancelar</button>
+            <button hlmBtn type="submit">Buscar talleres</button>
+          </div>
+        </form>
+
+        @if (candidatos().length) {
+          <div class="mt-6 space-y-3">
+            <h3 class="font-medium">Talleres candidatos</h3>
+            <div class="overflow-hidden rounded-xl border border-slate-200">
+              <table hlmTable>
+                <thead class="bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
+                  <tr>
+                    <th class="px-4 py-3">Taller</th>
+                    <th class="px-4 py-3">Distancia</th>
+                    <th class="px-4 py-3">Dirección</th>
+                    <th class="px-4 py-3 text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200">
+                  @for (candidato of candidatos(); track candidato.id) {
+                    <tr class="hover:bg-slate-50">
+                      <td class="px-4 py-3 font-medium text-slate-900">{{ candidato.nombre }}</td>
+                      <td class="px-4 py-3 text-sm text-slate-600">{{ candidato.distancia_km | number: '1.1-1' }} km</td>
+                      <td class="px-4 py-3 text-sm text-slate-600">{{ candidato.direccion }}</td>
+                      <td class="px-4 py-3 text-right">
+                        <button hlmBtn type="button" (click)="crearOrden(candidato.id)">Crear orden</button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</section>

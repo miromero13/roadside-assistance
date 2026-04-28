@@ -3,6 +3,8 @@ import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { lucideMoreVertical, lucidePlus, lucideX } from '@ng-icons/lucide';
 
 import {
   Averia,
@@ -12,90 +14,17 @@ import {
 } from '../../../core/models/conductor.model';
 import { ConductorApiService } from '../../../core/services/conductor-api.service';
 import { getErrorMessage } from '../../../core/utils/http-error.util';
+import { HlmButton } from '../../../components/button/src';
+import { HlmSelectImports } from '../../../components/select/src';
+import { HlmTable } from '../../../components/table/src';
+import { HlmTextarea } from '../../../components/textarea/src';
 
 @Component({
   selector: 'app-conductor-ordenes-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
-  template: `
-    <section class="space-y-5">
-      <header>
-        <h1 class="text-2xl font-semibold">Órdenes de servicio</h1>
-        <p class="text-sm text-slate-500">Busca talleres candidatos y crea una orden para tu avería.</p>
-      </header>
-
-      <form class="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 sm:grid-cols-2" [formGroup]="crearOrdenForm" (ngSubmit)="buscarCandidatos()">
-        <select class="rounded-lg border border-slate-300 px-3 py-2" formControlName="averia_id">
-          <option value="">Selecciona avería</option>
-          @for (averia of averias(); track averia.id) {
-            <option [value]="averia.id">{{ averia.descripcion_conductor }}</option>
-          }
-        </select>
-
-        <select class="rounded-lg border border-slate-300 px-3 py-2" formControlName="categoria_id">
-          <option value="">Selecciona categoría</option>
-          @for (categoria of categorias(); track categoria.id) {
-            <option [value]="categoria.id">{{ categoria.nombre }}</option>
-          }
-        </select>
-
-        <label class="sm:col-span-2 flex items-center gap-2 text-sm">
-          <input type="checkbox" formControlName="es_domicilio" />
-          Solicitar atención a domicilio
-        </label>
-
-        <textarea class="sm:col-span-2 rounded-lg border border-slate-300 px-3 py-2" rows="2" placeholder="Notas para el taller" formControlName="notas_conductor"></textarea>
-
-        <button class="w-fit rounded-lg bg-slate-900 px-4 py-2 text-sm text-white" type="submit">Buscar talleres</button>
-      </form>
-
-      @if (candidatos().length) {
-        <div class="space-y-2">
-          <h2 class="font-medium">Talleres candidatos</h2>
-          @for (candidato of candidatos(); track candidato.id) {
-            <article class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 p-3">
-              <div>
-                <p class="font-medium">{{ candidato.nombre }}</p>
-                <p class="text-sm text-slate-500">{{ candidato.distancia_km | number: '1.1-1' }} km · {{ candidato.direccion }}</p>
-              </div>
-              <button class="rounded-lg border border-slate-300 px-3 py-1 text-sm" type="button" (click)="crearOrden(candidato.id)">
-                Crear orden
-              </button>
-            </article>
-          }
-        </div>
-      }
-
-      @if (errorMessage()) {
-        <p class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{{ errorMessage() }}</p>
-      }
-
-      <div class="space-y-2">
-        <h2 class="font-medium">Mis órdenes</h2>
-        @for (orden of ordenes(); track orden.id) {
-          <article class="space-y-2 rounded-xl border border-slate-200 p-3">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <p class="font-medium">Orden {{ orden.id.slice(0, 8) }} · {{ orden.estado }}</p>
-              <span class="text-xs text-slate-500">{{ orden.creado_en | date: 'short' }}</span>
-            </div>
-            <p class="text-sm text-slate-500">Taller: {{ orden.taller_id }}</p>
-            <div class="flex flex-wrap gap-2">
-              <a class="rounded-lg border border-slate-300 px-3 py-1 text-sm" [routerLink]="['/app/conductor/ordenes', orden.id]">Ver detalle</a>
-              @if (orden.estado === 'pendiente_respuesta' || orden.estado === 'aceptada' || orden.estado === 'tecnico_asignado') {
-                <button class="rounded-lg border border-red-300 px-3 py-1 text-sm text-red-700" type="button" (click)="cancelarOrden(orden.id)">
-                  Cancelar
-                </button>
-              }
-            </div>
-          </article>
-        }
-
-        @if (!ordenes().length) {
-          <p class="rounded-lg border border-dashed border-slate-300 px-3 py-4 text-sm text-slate-500">Aún no tienes órdenes registradas.</p>
-        }
-      </div>
-    </section>
-  `,
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, HlmButton, HlmTable, HlmTextarea, NgIcon, ...HlmSelectImports],
+  providers: [provideIcons({ lucideMoreVertical, lucidePlus, lucideX })],
+  templateUrl: './conductor-ordenes-page.component.html',
 })
 export class ConductorOrdenesPageComponent {
   private readonly fb = inject(FormBuilder);
@@ -106,6 +35,8 @@ export class ConductorOrdenesPageComponent {
   protected readonly candidatos = signal<TallerCandidato[]>([]);
   protected readonly ordenes = signal<Orden[]>([]);
   protected readonly errorMessage = signal('');
+  protected readonly createModalOpen = signal(false);
+  protected readonly actionMenuOpenId = signal<string | null>(null);
 
   protected readonly crearOrdenForm = this.fb.nonNullable.group({
     averia_id: ['', Validators.required],
@@ -116,6 +47,26 @@ export class ConductorOrdenesPageComponent {
 
   constructor() {
     void this.loadData();
+  }
+
+  protected openCreateModal(): void {
+    this.actionMenuOpenId.set(null);
+    this.candidatos.set([]);
+    this.crearOrdenForm.reset({
+      averia_id: '',
+      categoria_id: '',
+      es_domicilio: true,
+      notas_conductor: '',
+    });
+    this.createModalOpen.set(true);
+  }
+
+  protected closeCreateModal(): void {
+    this.createModalOpen.set(false);
+  }
+
+  protected toggleActionMenu(ordenId: string): void {
+    this.actionMenuOpenId.set(this.actionMenuOpenId() === ordenId ? null : ordenId);
   }
 
   protected async buscarCandidatos(): Promise<void> {
@@ -147,6 +98,7 @@ export class ConductorOrdenesPageComponent {
         }),
       );
       this.candidatos.set([]);
+      this.closeCreateModal();
       await this.loadOrdenes();
     } catch (error) {
       this.errorMessage.set(getErrorMessage(error, 'No se pudo crear la orden.'));
@@ -157,6 +109,7 @@ export class ConductorOrdenesPageComponent {
     this.errorMessage.set('');
     try {
       await firstValueFrom(this.api.cancelOrden(ordenId, 'Cancelada desde frontend conductor'));
+      this.actionMenuOpenId.set(null);
       await this.loadOrdenes();
     } catch (error) {
       this.errorMessage.set(getErrorMessage(error, 'No se pudo cancelar la orden.'));

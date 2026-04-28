@@ -2,70 +2,23 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { lucideMoreVertical, lucidePlus, lucideX } from '@ng-icons/lucide';
 
 import { Vehiculo } from '../../../core/models/conductor.model';
 import { ConductorApiService } from '../../../core/services/conductor-api.service';
 import { getErrorMessage } from '../../../core/utils/http-error.util';
+import { HlmButton } from '../../../components/button/src';
+import { HlmInput } from '../../../components/input/src';
+import { HlmSelectImports } from '../../../components/select/src';
+import { HlmTable } from '../../../components/table/src';
 
 @Component({
   selector: 'app-conductor-vehiculos-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
-  template: `
-    <section class="space-y-5">
-      <header>
-        <h1 class="text-2xl font-semibold">Mis vehículos</h1>
-        <p class="text-sm text-slate-500">Registra y administra los vehículos vinculados a tu cuenta.</p>
-      </header>
-
-      <form class="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 sm:grid-cols-2" [formGroup]="form" (ngSubmit)="saveVehiculo()">
-        <input class="rounded-lg border border-slate-300 px-3 py-2" placeholder="Marca" formControlName="marca" />
-        <input class="rounded-lg border border-slate-300 px-3 py-2" placeholder="Modelo" formControlName="modelo" />
-        <input class="rounded-lg border border-slate-300 px-3 py-2" placeholder="Año" type="number" formControlName="anio" />
-        <input class="rounded-lg border border-slate-300 px-3 py-2" placeholder="Placa" formControlName="placa" />
-        <input class="rounded-lg border border-slate-300 px-3 py-2" placeholder="Color" formControlName="color" />
-        <select class="rounded-lg border border-slate-300 px-3 py-2" formControlName="tipo_combustible">
-          <option value="gasolina">Gasolina</option>
-          <option value="diesel">Diesel</option>
-          <option value="electrico">Eléctrico</option>
-          <option value="hibrido">Híbrido</option>
-          <option value="gas">Gas</option>
-        </select>
-
-        <div class="sm:col-span-2 flex flex-wrap gap-2">
-          <button class="rounded-lg bg-slate-900 px-4 py-2 text-sm text-white" type="submit" [disabled]="loading()">
-            {{ editingId() ? 'Actualizar' : 'Agregar' }} vehículo
-          </button>
-          @if (editingId()) {
-            <button class="rounded-lg border border-slate-300 px-4 py-2 text-sm" type="button" (click)="cancelEdit()">Cancelar</button>
-          }
-        </div>
-      </form>
-
-      @if (errorMessage()) {
-        <p class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{{ errorMessage() }}</p>
-      }
-
-      <div class="space-y-2">
-        @for (vehiculo of vehiculos(); track vehiculo.id) {
-          <article class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 p-3">
-            <div>
-              <p class="font-medium">{{ vehiculo.marca }} {{ vehiculo.modelo }} ({{ vehiculo.anio }})</p>
-              <p class="text-sm text-slate-500">Placa {{ vehiculo.placa }} · {{ vehiculo.tipo_combustible }}</p>
-            </div>
-            <div class="flex gap-2">
-              <button class="rounded-lg border border-slate-300 px-3 py-1 text-sm" type="button" (click)="startEdit(vehiculo)">Editar</button>
-              <button class="rounded-lg border border-red-300 px-3 py-1 text-sm text-red-700" type="button" (click)="deleteVehiculo(vehiculo.id)">Eliminar</button>
-            </div>
-          </article>
-        }
-
-        @if (!vehiculos().length) {
-          <p class="rounded-lg border border-dashed border-slate-300 px-3 py-4 text-sm text-slate-500">Aún no tienes vehículos registrados.</p>
-        }
-      </div>
-    </section>
-  `,
+  imports: [CommonModule, ReactiveFormsModule, HlmButton, HlmInput, HlmTable, NgIcon, ...HlmSelectImports],
+  providers: [provideIcons({ lucideMoreVertical, lucidePlus, lucideX })],
+  templateUrl: './conductor-vehiculos-page.component.html',
 })
 export class ConductorVehiculosPageComponent {
   private readonly fb = inject(FormBuilder);
@@ -75,6 +28,8 @@ export class ConductorVehiculosPageComponent {
   protected readonly loading = signal(false);
   protected readonly errorMessage = signal('');
   protected readonly editingId = signal<string | null>(null);
+  protected readonly modalOpen = signal(false);
+  protected readonly actionMenuOpenId = signal<string | null>(null);
 
   protected readonly form = this.fb.nonNullable.group({
     marca: ['', Validators.required],
@@ -87,6 +42,25 @@ export class ConductorVehiculosPageComponent {
 
   constructor() {
     void this.loadVehiculos();
+  }
+
+  protected openCreateModal(): void {
+    this.editingId.set(null);
+    this.actionMenuOpenId.set(null);
+    this.form.reset({
+      marca: '',
+      modelo: '',
+      anio: 2020,
+      placa: '',
+      color: '',
+      tipo_combustible: 'gasolina',
+    });
+    this.modalOpen.set(true);
+  }
+
+  protected closeModal(): void {
+    this.modalOpen.set(false);
+    this.editingId.set(null);
   }
 
   protected async saveVehiculo(): Promise<void> {
@@ -104,6 +78,7 @@ export class ConductorVehiculosPageComponent {
       } else {
         await firstValueFrom(this.api.createVehiculo(payload));
       }
+      this.closeModal();
       this.cancelEdit();
       await this.loadVehiculos();
     } catch (error) {
@@ -115,6 +90,8 @@ export class ConductorVehiculosPageComponent {
 
   protected startEdit(vehiculo: Vehiculo): void {
     this.editingId.set(vehiculo.id);
+    this.actionMenuOpenId.set(null);
+    this.modalOpen.set(true);
     this.form.patchValue({
       marca: vehiculo.marca,
       modelo: vehiculo.modelo,
@@ -137,7 +114,12 @@ export class ConductorVehiculosPageComponent {
     });
   }
 
+  protected toggleActionMenu(vehiculoId: string): void {
+    this.actionMenuOpenId.set(this.actionMenuOpenId() === vehiculoId ? null : vehiculoId);
+  }
+
   protected async deleteVehiculo(vehiculoId: string): Promise<void> {
+    this.actionMenuOpenId.set(null);
     this.errorMessage.set('');
     try {
       await firstValueFrom(this.api.deleteVehiculo(vehiculoId));

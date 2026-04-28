@@ -11,48 +11,7 @@ import { getErrorMessage } from '../../../core/utils/http-error.util';
   selector: 'app-taller-perfil-page',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
-  template: `
-    <section class="space-y-5">
-      <header>
-        <h1 class="text-2xl font-semibold">Perfil del taller</h1>
-        <p class="text-sm text-slate-500">Configura datos base de tu taller para operar en la plataforma.</p>
-      </header>
-
-      @if (loading()) {
-        <p class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">Cargando taller...</p>
-      }
-
-      @if (tallerId()) {
-        <p class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">Taller activo: <span class="font-mono">{{ tallerId() }}</span></p>
-      }
-
-      <form class="grid gap-3 rounded-xl border border-slate-200 p-4 sm:grid-cols-2" [formGroup]="perfilForm" (ngSubmit)="guardarPerfil()">
-        <input class="rounded-lg border border-slate-300 px-3 py-2" placeholder="Nombre" formControlName="nombre" />
-        <input class="rounded-lg border border-slate-300 px-3 py-2" placeholder="Teléfono" formControlName="telefono" />
-        <input class="sm:col-span-2 rounded-lg border border-slate-300 px-3 py-2" placeholder="Dirección" formControlName="direccion" />
-        <input class="rounded-lg border border-slate-300 px-3 py-2" type="number" step="0.000001" placeholder="Latitud" formControlName="latitud" />
-        <input class="rounded-lg border border-slate-300 px-3 py-2" type="number" step="0.000001" placeholder="Longitud" formControlName="longitud" />
-        <input class="rounded-lg border border-slate-300 px-3 py-2" type="number" step="0.1" placeholder="Radio cobertura km" formControlName="radio_cobertura_km" />
-        <input class="rounded-lg border border-slate-300 px-3 py-2" placeholder="Foto URL" formControlName="foto_url" />
-        <label class="sm:col-span-2 flex items-center gap-2 text-sm">
-          <input type="checkbox" formControlName="acepta_domicilio" />
-          Acepta servicio a domicilio
-        </label>
-        <textarea class="sm:col-span-2 rounded-lg border border-slate-300 px-3 py-2" rows="2" placeholder="Descripción" formControlName="descripcion"></textarea>
-
-        <div class="sm:col-span-2">
-          <button class="rounded-lg bg-slate-900 px-4 py-2 text-sm text-white" type="submit">Guardar cambios</button>
-        </div>
-      </form>
-
-      @if (errorMessage()) {
-        <p class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{{ errorMessage() }}</p>
-      }
-      @if (successMessage()) {
-        <p class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{{ successMessage() }}</p>
-      }
-    </section>
-  `,
+  templateUrl: './taller-perfil-page.component.html',
 })
 export class TallerPerfilPageComponent {
   private readonly api = inject(TallerApiService);

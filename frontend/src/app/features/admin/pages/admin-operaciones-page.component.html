@@ -1,0 +1,57 @@
+<section class="space-y-5">
+  <header>
+    <h1 class="text-2xl font-semibold">Operaciones: talleres y mecánicos</h1>
+    <p class="text-sm text-slate-500">Consulta talleres y abre el detalle para ver mecánicos o servicios.</p>
+  </header>
+
+  @if (errorMessage()) {
+    <p class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{{ errorMessage() }}</p>
+  }
+  @if (successMessage()) {
+    <p class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{{ successMessage() }}</p>
+  }
+
+  <article class="space-y-4 rounded-xl border border-slate-200 p-4">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <h2 class="font-medium">Talleres y mecánicos</h2>
+        <p class="text-sm text-slate-500">Usa el filtro y entra al detalle para revisar el equipo o los servicios.</p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button class="rounded-lg border px-3 py-1 text-sm" [class.bg-slate-900]="filtroDisponibles() === null" [class.text-white]="filtroDisponibles() === null" type="button" (click)="setFiltroDisponibles(null)">Todos</button>
+        <button class="rounded-lg border px-3 py-1 text-sm" [class.bg-slate-900]="filtroDisponibles() === true" [class.text-white]="filtroDisponibles() === true" type="button" (click)="setFiltroDisponibles(true)">Disponibles</button>
+        <button class="rounded-lg border px-3 py-1 text-sm" [class.bg-slate-900]="filtroDisponibles() === false" [class.text-white]="filtroDisponibles() === false" type="button" (click)="setFiltroDisponibles(false)">No disponibles</button>
+      </div>
+    </div>
+
+    <div class="overflow-hidden rounded-xl border border-slate-200">
+        <table hlmTable class="w-full">
+          <thead class="bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
+            <tr>
+              <th class="px-4 py-3">Taller</th>
+              <th class="px-4 py-3">Contacto</th>
+              <th class="px-4 py-3">Estado</th>
+              <th class="px-4 py-3 text-right">Acción</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200">
+          @for (taller of talleres(); track taller.id) {
+            <tr class="hover:bg-slate-50">
+              <td class="px-4 py-3 font-medium text-slate-900">{{ taller.nombre }}</td>
+              <td class="px-4 py-3 text-slate-600">{{ taller.usuario.nombre }} {{ taller.usuario.apellido }} · {{ taller.usuario.email }}</td>
+              <td class="px-4 py-3 text-slate-600">{{ taller.activo ? 'Activo' : 'Inactivo' }}</td>
+              <td class="px-4 py-3 text-right">
+                <a class="rounded-lg border px-3 py-1 text-sm inline-flex items-center" [routerLink]="['/app/admin/operaciones', taller.id]" [queryParamsHandling]="'preserve'">Ver detalles</a>
+              </td>
+            </tr>
+          }
+          @if (!talleres().length) {
+            <tr>
+              <td class="px-4 py-8 text-center text-sm text-slate-500" colspan="4">No hay talleres disponibles.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </article>
+</section>

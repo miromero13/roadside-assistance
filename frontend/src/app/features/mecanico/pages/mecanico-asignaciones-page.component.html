@@ -1,0 +1,38 @@
+<section class="space-y-5">
+  <header>
+    <h1 class="text-2xl font-semibold">Mis asignaciones</h1>
+    <p class="text-sm text-slate-500">Consulta tus servicios y entra al detalle para reportar avance.</p>
+  </header>
+
+  <div class="flex flex-wrap gap-2">
+    <button class="rounded-lg border px-3 py-1 text-sm" [class.bg-slate-900]="filtroEstado() === ''" [class.text-white]="filtroEstado() === ''" type="button" (click)="setFiltro('')">Todas</button>
+    <button class="rounded-lg border px-3 py-1 text-sm" [class.bg-slate-900]="filtroEstado() === 'asignado'" [class.text-white]="filtroEstado() === 'asignado'" type="button" (click)="setFiltro('asignado')">Asignado</button>
+    <button class="rounded-lg border px-3 py-1 text-sm" [class.bg-slate-900]="filtroEstado() === 'en_camino'" [class.text-white]="filtroEstado() === 'en_camino'" type="button" (click)="setFiltro('en_camino')">En camino</button>
+    <button class="rounded-lg border px-3 py-1 text-sm" [class.bg-slate-900]="filtroEstado() === 'atendiendo'" [class.text-white]="filtroEstado() === 'atendiendo'" type="button" (click)="setFiltro('atendiendo')">Atendiendo</button>
+    <button class="rounded-lg border px-3 py-1 text-sm" [class.bg-slate-900]="filtroEstado() === 'finalizado'" [class.text-white]="filtroEstado() === 'finalizado'" type="button" (click)="setFiltro('finalizado')">Finalizado</button>
+  </div>
+
+  @if (errorMessage()) {
+    <p class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{{ errorMessage() }}</p>
+  }
+
+  <div class="space-y-2">
+    @for (asignacion of asignacionesFiltradas(); track asignacion.id) {
+      <article class="space-y-2 rounded-xl border border-slate-200 p-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <p class="font-medium">Asignación {{ asignacion.id.slice(0, 8) }} · {{ asignacion.estado }}</p>
+          <span class="text-xs text-slate-500">{{ asignacion.asignado_en | date: 'short' }}</span>
+        </div>
+        <p class="text-sm text-slate-500">Orden: {{ asignacion.orden_id }}</p>
+        @if (asignacion.notas) {
+          <p class="text-sm text-slate-700">{{ asignacion.notas }}</p>
+        }
+        <a class="inline-block rounded-lg border border-slate-300 px-3 py-1 text-sm" [routerLink]="['/app/mecanico/asignaciones', asignacion.id]">Ver detalle</a>
+      </article>
+    }
+
+    @if (!asignacionesFiltradas().length) {
+      <p class="rounded-lg border border-dashed border-slate-300 px-3 py-4 text-sm text-slate-500">No hay asignaciones para el filtro seleccionado.</p>
+    }
+  </div>
+</section>
