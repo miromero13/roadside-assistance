@@ -57,6 +57,7 @@
   - `npm run build`
   - `npm run test` (temporary smoke build in development mode; no spec files yet)
 - Tooling: Angular 21 + Spartan/Helm + Tailwind v4 (`frontend/src/styles.css`).
+- Local Spartan wrappers now include `@spartan-ng/helm/select`, `@spartan-ng/helm/textarea`, and `@spartan-ng/helm/table` in addition to the existing button/input/icon/sheet/etc. wrappers.
 - Entrypoints:
   - bootstrap: `frontend/src/main.ts`
   - root component: `frontend/src/app/app.ts`
