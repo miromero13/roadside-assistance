@@ -1,216 +1,85 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import {
+  lucideBarChart3,
+  lucideBell,
+  lucideBuilding2,
+  lucideCarFront,
+  lucideClipboardList,
+  lucideGauge,
+  lucideLayoutDashboard,
+  lucidePackage,
+  lucideShield,
+  lucideTriangleAlert,
+  lucideUser,
+  lucideUsers,
+  lucideWrench,
+} from '@ng-icons/lucide';
 
+import {
+  HlmSidebar,
+  HlmSidebarContent,
+  HlmSidebarHeader,
+  HlmSidebarInset,
+  HlmSidebarMenu,
+  HlmSidebarMenuButton,
+  HlmSidebarMenuItem,
+  HlmSidebarTrigger,
+  HlmSidebarWrapper,
+} from '../../components/sidebar/src';
 import { SessionService } from '../services/session.service';
+
+type SidebarItem = {
+  label: string;
+  route: string;
+  icon: string;
+  exact?: boolean;
+};
+
+type SidebarSection = {
+  title?: string;
+  items: SidebarItem[];
+};
 
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet],
-  template: `
-    <div class="min-h-screen bg-slate-100 text-slate-900">
-      <header class="border-b border-slate-200 bg-white/90 backdrop-blur">
-        <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
-          <div>
-            <p class="text-lg font-semibold">ACI Web</p>
-            <p class="text-xs text-slate-500">Panel operativo</p>
-          </div>
-
-          <div class="flex items-center gap-3 text-sm">
-            <div class="text-right">
-              <p class="font-medium">{{ fullName() }}</p>
-              <p class="text-xs uppercase tracking-wide text-slate-500">{{ userRole() }}</p>
-            </div>
-            <button
-              type="button"
-              class="rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50"
-              (click)="logout()"
-            >
-              Cerrar sesión
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <div class="mx-auto grid max-w-6xl gap-4 px-4 py-4 sm:px-6 md:grid-cols-[220px_1fr]">
-        <aside class="rounded-xl border border-slate-200 bg-white p-3">
-          <nav class="space-y-1 text-sm">
-            <a
-              routerLink="/app/perfil"
-              routerLinkActive="bg-slate-900 text-white"
-              class="block rounded-lg px-3 py-2 hover:bg-slate-100"
-            >
-              Mi perfil
-            </a>
-
-            @if (userRole() === 'conductor') {
-              <a
-                routerLink="/app/conductor"
-                routerLinkActive="bg-slate-900 text-white"
-                class="block rounded-lg px-3 py-2 hover:bg-slate-100"
-              >
-                Dashboard conductor
-              </a>
-              <a
-                routerLink="/app/conductor/vehiculos"
-                routerLinkActive="bg-slate-900 text-white"
-                class="block rounded-lg px-3 py-2 hover:bg-slate-100"
-              >
-                Vehículos
-              </a>
-              <a
-                routerLink="/app/conductor/averias"
-                routerLinkActive="bg-slate-900 text-white"
-                class="block rounded-lg px-3 py-2 hover:bg-slate-100"
-              >
-                Averías
-              </a>
-              <a
-                routerLink="/app/conductor/ordenes"
-                routerLinkActive="bg-slate-900 text-white"
-                class="block rounded-lg px-3 py-2 hover:bg-slate-100"
-              >
-                Órdenes
-              </a>
-              <a
-                routerLink="/app/conductor/notificaciones"
-                routerLinkActive="bg-slate-900 text-white"
-                class="block rounded-lg px-3 py-2 hover:bg-slate-100"
-              >
-                Notificaciones
-              </a>
-            }
-
-            @if (userRole() === 'taller') {
-              <a
-                routerLink="/app/taller"
-                routerLinkActive="bg-slate-900 text-white"
-                class="block rounded-lg px-3 py-2 hover:bg-slate-100"
-              >
-                Dashboard taller
-              </a>
-              <a
-                routerLink="/app/taller/ordenes"
-                routerLinkActive="bg-slate-900 text-white"
-                class="block rounded-lg px-3 py-2 hover:bg-slate-100"
-              >
-                Órdenes taller
-              </a>
-              <a
-                routerLink="/app/taller/comisiones"
-                routerLinkActive="bg-slate-900 text-white"
-                class="block rounded-lg px-3 py-2 hover:bg-slate-100"
-              >
-                Comisiones
-              </a>
-              <a
-                routerLink="/app/taller/servicios"
-                routerLinkActive="bg-slate-900 text-white"
-                class="block rounded-lg px-3 py-2 hover:bg-slate-100"
-              >
-                Servicios
-              </a>
-              <a
-                routerLink="/app/taller/disponibilidad"
-                routerLinkActive="bg-slate-900 text-white"
-                class="block rounded-lg px-3 py-2 hover:bg-slate-100"
-              >
-                Disponibilidad
-              </a>
-              <a
-                routerLink="/app/taller/perfil"
-                routerLinkActive="bg-slate-900 text-white"
-                class="block rounded-lg px-3 py-2 hover:bg-slate-100"
-              >
-                Perfil taller
-              </a>
-              <a
-                routerLink="/app/taller/notificaciones"
-                routerLinkActive="bg-slate-900 text-white"
-                class="block rounded-lg px-3 py-2 hover:bg-slate-100"
-              >
-                Notificaciones
-              </a>
-            }
-
-            @if (userRole() === 'mecanico') {
-              <a
-                routerLink="/app/mecanico"
-                routerLinkActive="bg-slate-900 text-white"
-                class="block rounded-lg px-3 py-2 hover:bg-slate-100"
-              >
-                Dashboard mecánico
-              </a>
-              <a
-                routerLink="/app/mecanico/asignaciones"
-                routerLinkActive="bg-slate-900 text-white"
-                class="block rounded-lg px-3 py-2 hover:bg-slate-100"
-              >
-                Mis asignaciones
-              </a>
-            }
-
-            @if (userRole() === 'admin') {
-              <a
-                routerLink="/app/admin"
-                routerLinkActive="bg-slate-900 text-white"
-                class="block rounded-lg px-3 py-2 hover:bg-slate-100"
-              >
-                Dashboard admin
-              </a>
-              <a
-                routerLink="/app/admin/usuarios"
-                routerLinkActive="bg-slate-900 text-white"
-                class="block rounded-lg px-3 py-2 hover:bg-slate-100"
-              >
-                Usuarios
-              </a>
-              <a
-                routerLink="/app/admin/operaciones"
-                routerLinkActive="bg-slate-900 text-white"
-                class="block rounded-lg px-3 py-2 hover:bg-slate-100"
-              >
-                Talleres y mecánicos
-              </a>
-              <a
-                routerLink="/app/admin/catalogo"
-                routerLinkActive="bg-slate-900 text-white"
-                class="block rounded-lg px-3 py-2 hover:bg-slate-100"
-              >
-                Catálogo
-              </a>
-              <a
-                routerLink="/app/admin/ordenes"
-                routerLinkActive="bg-slate-900 text-white"
-                class="block rounded-lg px-3 py-2 hover:bg-slate-100"
-              >
-                Órdenes
-              </a>
-              <a
-                routerLink="/app/admin/finanzas"
-                routerLinkActive="bg-slate-900 text-white"
-                class="block rounded-lg px-3 py-2 hover:bg-slate-100"
-              >
-                Finanzas
-              </a>
-              <a
-                routerLink="/app/admin/metricas"
-                routerLinkActive="bg-slate-900 text-white"
-                class="block rounded-lg px-3 py-2 hover:bg-slate-100"
-              >
-                Métricas
-              </a>
-            }
-          </nav>
-        </aside>
-
-        <main class="rounded-xl border border-slate-200 bg-white p-4 sm:p-6">
-          <router-outlet />
-        </main>
-      </div>
-    </div>
-  `,
+  imports: [
+    CommonModule,
+    RouterLink,
+    RouterLinkActive,
+    RouterOutlet,
+    NgIcon,
+    HlmSidebar,
+    HlmSidebarContent,
+    HlmSidebarHeader,
+    HlmSidebarInset,
+    HlmSidebarMenu,
+    HlmSidebarMenuButton,
+    HlmSidebarMenuItem,
+    HlmSidebarTrigger,
+    HlmSidebarWrapper,
+  ],
+  providers: [
+    provideIcons({
+      lucideBarChart3,
+      lucideBell,
+      lucideBuilding2,
+      lucideCarFront,
+      lucideClipboardList,
+      lucideGauge,
+      lucideLayoutDashboard,
+      lucidePackage,
+      lucideShield,
+      lucideTriangleAlert,
+      lucideUser,
+      lucideUsers,
+      lucideWrench,
+    }),
+  ],
+  templateUrl: './app-shell.component.html',
 })
 export class AppShellComponent {
   private readonly session = inject(SessionService);
@@ -221,6 +90,89 @@ export class AppShellComponent {
   });
 
   protected readonly userRole = computed(() => this.session.user()?.rol ?? '-');
+
+  protected readonly userRoleLabel = computed(() => {
+    switch (this.userRole()) {
+      case 'conductor':
+        return 'Conductor';
+      case 'taller':
+        return 'Taller';
+      case 'mecanico':
+        return 'Mecánico';
+      case 'admin':
+        return 'Admin';
+      default:
+        return 'Sin sesión';
+    }
+  });
+
+  protected readonly sidebarSections = computed<SidebarSection[]>(() => {
+    const shared: SidebarSection = {
+      items: [{ label: 'Mi perfil', route: '/app/perfil', icon: 'lucideUser', exact: true }],
+    };
+
+    switch (this.userRole()) {
+      case 'conductor':
+        return [
+          shared,
+          {
+            title: 'Conductor',
+            items: [
+              { label: 'Dashboard', route: '/app/conductor', icon: 'lucideLayoutDashboard', exact: true },
+              { label: 'Vehículos', route: '/app/conductor/vehiculos', icon: 'lucideCarFront' },
+              { label: 'Averías', route: '/app/conductor/averias', icon: 'lucideTriangleAlert' },
+              { label: 'Órdenes', route: '/app/conductor/ordenes', icon: 'lucideClipboardList' },
+              { label: 'Notificaciones', route: '/app/conductor/notificaciones', icon: 'lucideBell' },
+            ],
+          },
+        ];
+      case 'taller':
+        return [
+          shared,
+          {
+            title: 'Taller',
+            items: [
+              { label: 'Dashboard', route: '/app/taller', icon: 'lucideLayoutDashboard', exact: true },
+              { label: 'Órdenes taller', route: '/app/taller/ordenes', icon: 'lucideClipboardList' },
+              { label: 'Comisiones', route: '/app/taller/comisiones', icon: 'lucideBarChart3' },
+              { label: 'Servicios', route: '/app/taller/servicios', icon: 'lucideWrench' },
+              { label: 'Disponibilidad', route: '/app/taller/disponibilidad', icon: 'lucideGauge' },
+              { label: 'Perfil taller', route: '/app/taller/perfil', icon: 'lucideBuilding2' },
+              { label: 'Notificaciones', route: '/app/taller/notificaciones', icon: 'lucideBell' },
+            ],
+          },
+        ];
+      case 'mecanico':
+        return [
+          shared,
+          {
+            title: 'Mecánico',
+            items: [
+              { label: 'Dashboard', route: '/app/mecanico', icon: 'lucideLayoutDashboard', exact: true },
+              { label: 'Mis asignaciones', route: '/app/mecanico/asignaciones', icon: 'lucideClipboardList' },
+            ],
+          },
+        ];
+      case 'admin':
+        return [
+          shared,
+          {
+            title: 'Administración',
+            items: [
+              { label: 'Dashboard', route: '/app/admin', icon: 'lucideLayoutDashboard', exact: true },
+              { label: 'Usuarios', route: '/app/admin/usuarios', icon: 'lucideUsers' },
+              { label: 'Talleres y mecánicos', route: '/app/admin/operaciones', icon: 'lucideShield' },
+              { label: 'Catálogo', route: '/app/admin/catalogo', icon: 'lucideWrench' },
+              { label: 'Órdenes', route: '/app/admin/ordenes', icon: 'lucideClipboardList' },
+              { label: 'Finanzas', route: '/app/admin/finanzas', icon: 'lucidePackage' },
+              { label: 'Métricas', route: '/app/admin/metricas', icon: 'lucideBarChart3' },
+            ],
+          },
+        ];
+      default:
+        return [shared];
+    }
+  });
 
   protected async logout(): Promise<void> {
     await this.session.logout(true);
