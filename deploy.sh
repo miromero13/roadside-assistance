@@ -1,7 +1,6 @@
 #!/bin/bash
 
 # --- 0. CONFIGURAR ENTORNO NODE ---
-# Carga NVM para que el script pueda usarlo
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
@@ -27,10 +26,12 @@ echo "🚀 Iniciando despliegue total..."
 # --- 3. DESPLIEGUE DEL FRONTEND ---
 echo "📦 Paso 1: Compilando Frontend Angular..."
 cd "$FRONTEND_PATH" || exit
-npm install && npm run build
+
+# CAMBIO AQUÍ: Añadimos --base-href ./ para que las rutas sean relativas
+npm install && npm run build -- --base-href ./
 
 if [ $? -eq 0 ]; then
-    echo "✅ Build exitoso. Sincronizando con Google Cloud Storage..."
+    echo "✅ Build exitoso con rutas relativas. Sincronizando con Google Cloud Storage..."
     gsutil -m rsync -r -d dist/frontend/browser "$BUCKET_NAME"
 else
     echo "❌ Error en el build del Frontend. El despliegue se ha detenido."
