@@ -5,11 +5,14 @@ import { Router, RouterLink } from '@angular/router';
 
 import { SessionService } from '../../../core/services/session.service';
 import { getDefaultRouteForRole } from '../../../core/utils/role-route.util';
+import { HlmButton } from '../../../components/button/src';
+import { HlmCardImports } from '../../../components/card/src';
+import { HlmInput } from '../../../components/input/src';
 
 @Component({
   selector: 'app-register-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, HlmButton, HlmInput, ...HlmCardImports],
   templateUrl: './register-page.component.html',
 })
 export class RegisterPageComponent {
