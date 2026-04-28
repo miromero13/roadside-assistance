@@ -4,6 +4,11 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 
+import { HlmBadge } from '../../../components/badge/src';
+import { HlmButton } from '../../../components/button/src';
+import { HlmCardImports } from '../../../components/card/src';
+import { HlmInput } from '../../../components/input/src';
+import { HlmTable } from '../../../components/table/src';
 import {
   AsignacionOrden,
   Calificacion,
@@ -16,21 +21,25 @@ import {
   Pago,
   Presupuesto,
 } from '../../../core/models/conductor.model';
+import { TallerInfo } from '../../../core/models/taller.model';
 import { ConductorApiService } from '../../../core/services/conductor-api.service';
+import { TallerApiService } from '../../../core/services/taller-api.service';
 import { getErrorMessage } from '../../../core/utils/http-error.util';
 
 @Component({
   selector: 'app-conductor-orden-detalle-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, HlmBadge, HlmButton, HlmInput, HlmTable, ...HlmCardImports],
   templateUrl: './conductor-orden-detalle-page.component.html',
 })
 export class ConductorOrdenDetallePageComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(ConductorApiService);
+  private readonly tallerApi = inject(TallerApiService);
   private readonly fb = inject(FormBuilder);
 
   protected readonly orden = signal<Orden | null>(null);
+  protected readonly taller = signal<TallerInfo | null>(null);
   protected readonly historial = signal<HistorialEstadoOrden[]>([]);
   protected readonly asignaciones = signal<AsignacionOrden[]>([]);
   protected readonly presupuestos = signal<Presupuesto[]>([]);
@@ -58,11 +67,16 @@ export class ConductorOrdenDetallePageComponent {
   protected readonly chatForm = this.fb.nonNullable.group({
     contenido: ['', [Validators.required, Validators.minLength(1)]],
   });
+  protected readonly activeTab = signal<'seguimiento' | 'presupuestos' | 'chat'>('seguimiento');
 
   private readonly ordenId = computed(() => this.route.snapshot.paramMap.get('ordenId') ?? '');
 
   constructor() {
     void this.loadAll();
+  }
+
+  protected setActiveTab(tab: 'seguimiento' | 'presupuestos' | 'chat'): void {
+    this.activeTab.set(tab);
   }
 
   protected async aprobarPresupuesto(presupuestoId: string): Promise<void> {
@@ -261,9 +275,19 @@ export class ConductorOrdenDetallePageComponent {
       ]);
 
       this.orden.set(orden.data ?? null);
+      this.taller.set(null);
       this.historial.set(historial.data ?? []);
       this.asignaciones.set(asignaciones.data ?? []);
       this.presupuestos.set(presupuestos.data ?? []);
+      const tallerId = orden.data?.taller_id;
+      if (tallerId) {
+        try {
+          const tallerResponse = await firstValueFrom(this.tallerApi.getTaller(tallerId));
+          this.taller.set(tallerResponse.data ?? null);
+        } catch {
+          this.taller.set(null);
+        }
+      }
       await Promise.all([
         this.recargarFacturaPorOrden(),
         this.cargarCalificaciones(ordenId),
