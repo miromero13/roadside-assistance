@@ -926,6 +926,25 @@ def seed() -> None:
             password="Mecanico123!",
             rol=UserRole.MECANICO,
         )
+        usuario_mecanico_7 = ensure_usuario(
+            db,
+            nombre="Rosa",
+            apellido="Salazar",
+            email="mecanico7@aci.com",
+            telefono="70000021",
+            password="Mecanico123!",
+            rol=UserRole.MECANICO,
+        )
+
+        usuario_taller_4 = ensure_usuario(
+            db,
+            nombre="Gabriel",
+            apellido="Cruz",
+            email="taller4@aci.com",
+            telefono="70000022",
+            password="Taller123!",
+            rol=UserRole.TALLER,
+        )
 
         cat_bateria = ensure_categoria(db, "Bateria", "Problemas de bateria y alternador")
         cat_llanta = ensure_categoria(db, "Llantas", "Pinchazos, cambio y alineacion")
@@ -973,6 +992,19 @@ def seed() -> None:
             acepta_domicilio=True,
             calificacion_promedio="4.80",
         )
+        taller_4 = ensure_taller(
+            db,
+            usuario=usuario_taller_4,
+            nombre="Taller Rescate Santa Cruz",
+            descripcion="Servicio de grua y rescate en Santa Cruz",
+            direccion="Av. Beni 2000",
+            latitud="-17.785750",
+            longitud="-63.116608",
+            radio_cobertura_km="18.00",
+            telefono="72000004",
+            acepta_domicilio=True,
+            calificacion_promedio="4.75",
+        )
 
         mecanico_1 = ensure_mecanico(db, usuario=usuario_mecanico_1, taller=taller_1, especialidad="Motor y bateria", disponible=True)
         mecanico_2 = ensure_mecanico(db, usuario=usuario_mecanico_2, taller=taller_1, especialidad="Frenos y suspension", disponible=True)
@@ -980,6 +1012,7 @@ def seed() -> None:
         mecanico_4 = ensure_mecanico(db, usuario=usuario_mecanico_4, taller=taller_2, especialidad="Llantas", disponible=False)
         mecanico_5 = ensure_mecanico(db, usuario=usuario_mecanico_5, taller=taller_3, especialidad="Grua y rescate", disponible=True)
         mecanico_6 = ensure_mecanico(db, usuario=usuario_mecanico_6, taller=taller_3, especialidad="Diagnostico general", disponible=True)
+        mecanico_7 = ensure_mecanico(db, usuario=usuario_mecanico_7, taller=taller_4, especialidad="Grua y rescate en ruta", disponible=True)
 
         for dia in [
             DiaSemana.LUNES,
@@ -992,6 +1025,7 @@ def seed() -> None:
             ensure_horario(db, taller=taller_1, dia_semana=dia, hora_apertura=time(8, 0), hora_cierre=time(18, 30), disponible=True)
             ensure_horario(db, taller=taller_2, dia_semana=dia, hora_apertura=time(8, 30), hora_cierre=time(18, 0), disponible=True)
             ensure_horario(db, taller=taller_3, dia_semana=dia, hora_apertura=time(7, 30), hora_cierre=time(19, 0), disponible=True)
+            ensure_horario(db, taller=taller_4, dia_semana=dia, hora_apertura=time(8, 0), hora_cierre=time(20, 0), disponible=True)
 
         ensure_bloqueo(
             db,
@@ -1017,6 +1051,8 @@ def seed() -> None:
         ensure_servicio(db, taller=taller_3, categoria=cat_grua, descripcion="Servicio de grua", precio_min="150", precio_max="500", tiempo_min=80, servicio_movil=True)
         ensure_servicio(db, taller=taller_3, categoria=cat_llanta, descripcion="Asistencia en carretera", precio_min="70", precio_max="210", tiempo_min=45, servicio_movil=True)
         ensure_servicio(db, taller=taller_3, categoria=cat_motor, descripcion="Encendido de emergencia", precio_min="100", precio_max="320", tiempo_min=55, servicio_movil=True)
+        ensure_servicio(db, taller=taller_4, categoria=cat_grua, descripcion="Servicio de grua 24/7", precio_min="160", precio_max="520", tiempo_min=75, servicio_movil=True)
+        ensure_servicio(db, taller=taller_4, categoria=cat_motor, descripcion="Diagnostico en ruta", precio_min="110", precio_max="350", tiempo_min=60, servicio_movil=True)
 
         veh_1 = ensure_vehiculo(db, usuario=conductor_1, marca="Toyota", modelo="Corolla", anio=2018, placa="1234ABC", color="Blanco", combustible=TipoCombustible.GASOLINA)
         veh_2 = ensure_vehiculo(db, usuario=conductor_1, marca="Nissan", modelo="Sentra", anio=2020, placa="5678DEF", color="Gris", combustible=TipoCombustible.GASOLINA)
@@ -1509,16 +1545,18 @@ def seed() -> None:
         print("taller@aci.com / Taller123!")
         print("taller2@aci.com / Taller123!")
         print("taller3@aci.com / Taller123!")
+        print("taller4@aci.com / Taller123!")
         print("mecanico@aci.com / Mecanico123!")
         print("mecanico2@aci.com / Mecanico123!")
         print("mecanico3@aci.com / Mecanico123!")
         print("mecanico4@aci.com / Mecanico123!")
         print("mecanico5@aci.com / Mecanico123!")
         print("mecanico6@aci.com / Mecanico123!")
+        print("mecanico7@aci.com / Mecanico123!")
         print("IDs utiles:")
-        print(f"categoria_id={cat_bateria.id}")
-        print(f"taller_id={taller_1.id}")
-        print(f"mecanico_id={mecanico_1.id}")
+        print(f"categoria_grua_id={cat_grua.id}")
+        print(f"taller_rescate_id={taller_4.id}")
+        print(f"mecanico_rescate_id={mecanico_7.id}")
         print(f"orden_en_proceso_id={orden_3.id}")
         print(f"orden_completada_id={orden_4.id}")
 

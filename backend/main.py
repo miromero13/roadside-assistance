@@ -1,5 +1,7 @@
 from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+import os
 
 from app.routes import (
     asignacion_routes,
@@ -40,10 +42,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Servir archivos estáticos de media
+if os.path.exists("media"):
+    app.mount("/media", StaticFiles(directory="media"), name="media")
+
 # Routers
 api_router = APIRouter(prefix="/api")
 api_router.include_router(user_routes.router)
-api_router.include_router(auth.router)  
+api_router.include_router(auth.router)
 api_router.include_router(gestion_routes.router)
 api_router.include_router(vehiculo_routes.router)
 api_router.include_router(averia_routes.router)

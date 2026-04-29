@@ -25,8 +25,9 @@
 - Current auth baseline: `auth/logout` is available and revokes current JWT in-memory until token expiration (revocation is not persisted across server restarts).
 - Current ownership baseline: conductores only manage their own `vehiculos` and can only create averías linked to their own vehicles; admin can read all.
 - Current profile baseline: users can read and update their own profile via `/api/users/me` (`GET`/`PUT`), including optional password change with current-password validation.
-- Current order baseline: conductor selects taller manually (`/api/talleres/candidatos` + `/api/ordenes`); a single avería cannot have more than one active orden at the same time.
+- Current order baseline: a conductor registers an avería and the system creates the initial orden automatically with AI classification; a single avería cannot have more than one active orden at the same time.
 - Current order fallback baseline: when a taller rejects a pending order, the system auto-creates a new pending order for another compatible candidate (same category + coverage), excluding already attempted talleres for that avería.
+- Current avería baseline: registering an `averia` now triggers Gemini-backed classification when `GEMINI_API_KEY` is configured, creates the service order automatically, and exposes the generated diagnosis/order in avería reads.
 - Current dispatch baseline: only the order's `taller` can accept/reject and assign mechanics; reassignment cancels previous assignment; mechanic can update only their own assignment states.
 - Current dispatch baseline: mechanics can also list their own assignments and read their own assignment detail via `/api/asignaciones/mias` and `/api/asignaciones/{asignacion_id}`.
 - Current order controls baseline: orders expose cancel/manual-complete operations plus history (`historial-estados`) and assignment listing (`asignaciones`) endpoints with role/ownership checks.
@@ -76,9 +77,11 @@
   - `fvm flutter test`
 - Flutter channel pinned via `mobile/.fvmrc` (`stable`).
 - Mobile Sprint 1 baseline is implemented: app shell + session bootstrap, auth (login/register conductor), profile update, token/user persistence in `shared_preferences`, and backend API integration via `http`.
-- Mobile Sprint 2 baseline is implemented for conductor: mobile tabs for `vehiculos`, `averias`, and `ordenes` with create/list flows, candidate workshop lookup (`/api/talleres/candidatos`), order cancel from app, and order detail view with presupuestos/pago/factura/calificación/chat/historial/asignaciones.
+- Mobile Sprint 2 baseline is implemented for conductor: mobile tabs for `vehiculos`, `averias`, and `ordenes` with list/detail/cancel flows, order creation driven by avería registration, and order detail view with presupuestos/pago/factura/calificación/chat/historial/asignaciones.
 - Mobile Sprint 3 baseline is implemented for taller: mobile tabs for `ordenes`, `comisiones`, and `notificaciones` with accept/reject flow, order detail (assign mechanic, create budget, chat), and commission payment from app.
 - Mobile Sprint 4 baseline is implemented: native capabilities are integrated for conductor averías (current geolocation + camera/gallery photo capture + audio file attachment) and session-level push-device registration/deactivation against `/api/push/dispositivos`.
+- Mobile conductor averías now also support video capture and live microphone recording before submitting the incident.
+- Mobile conductor averías create now uses Google Maps on Android; configure `GOOGLE_MAPS_API_KEY` in `mobile/android/local.properties` or the environment before running the app, or the map view will stay hidden behind a warning card.
 - Mobile structure entrypoints: `mobile/lib/main.dart`, `mobile/lib/src/app.dart`, `mobile/lib/src/core/services/session_controller.dart`, `mobile/lib/src/features/auth/auth_page.dart`, `mobile/lib/src/features/profile/profile_page.dart`, `mobile/lib/src/features/conductor/pages/conductor_vehiculos_page.dart`, `mobile/lib/src/features/conductor/pages/conductor_averias_page.dart`, `mobile/lib/src/features/conductor/pages/conductor_ordenes_page.dart`, `mobile/lib/src/features/conductor/pages/conductor_orden_detalle_page.dart`, `mobile/lib/src/features/taller/pages/taller_ordenes_page.dart`, `mobile/lib/src/features/taller/pages/taller_orden_detalle_page.dart`, `mobile/lib/src/features/taller/pages/taller_comisiones_page.dart`, `mobile/lib/src/features/taller/pages/taller_notificaciones_page.dart`, `mobile/lib/src/core/services/native_device_service.dart`, `mobile/lib/src/core/services/push_device_service.dart`.
 
 ## Verification Strategy

@@ -1,9 +1,12 @@
+from decimal import Decimal
 from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, Field
+from fastapi import UploadFile
 
 from app.models.enums import EstadoAveria, MedioTipo, Prioridad
+from app.schemas.catalogo_schema import CategoriaServicioRead
 
 
 class AveriaCrear(BaseModel):
@@ -21,6 +24,11 @@ class MedioAveriaCrear(BaseModel):
     orden_visualizacion: int = Field(default=1, ge=1, le=20)
 
 
+class MedioAveriaConArchivoCrear(BaseModel):
+    tipo: MedioTipo
+    orden_visualizacion: int = Field(default=1, ge=1, le=20)
+
+
 class MedioAveriaRead(BaseModel):
     id: UUID
     averia_id: UUID
@@ -28,6 +36,40 @@ class MedioAveriaRead(BaseModel):
     url: str
     orden_visualizacion: int
     subido_en: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class DiagnosticoIARead(BaseModel):
+    id: UUID
+    averia_id: UUID
+    categoria_id: UUID | None
+    categoria: CategoriaServicioRead | None = None
+    clasificacion: str
+    urgencia: Prioridad
+    nivel_confianza: Decimal | None
+    analisis: str
+    resumen_automatico: str | None
+    recomendacion: str | None
+    danos_visibles: str | None
+    costo_estimado_min: Decimal | None
+    costo_estimado_max: Decimal | None
+    requiere_revision_manual: bool
+    generado_en: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class TallerOpcionRead(BaseModel):
+    """Opción de taller disponible para una avería"""
+
+    taller_id: UUID
+    nombre: str
+    distancia_km: float
+    tiempo_aproximado_min: int | None
+    radio_cobertura_km: float
+    calificacion_promedio: float
+    acepta_domicilio: bool
 
     model_config = {"from_attributes": True}
 
@@ -52,3 +94,10 @@ class AveriaRead(BaseModel):
 
 class AveriaDetalleRead(AveriaRead):
     medios: list[MedioAveriaRead]
+    diagnostico_ia: DiagnosticoIARead | None = None
+    talleres_disponibles: list[TallerOpcionRead] = Field(default_factory=list)
+
+
+class ListaTalleresDisponiblesResponse(BaseModel):
+    data: list[TallerOpcionRead]
+    countData: int
