@@ -1,5 +1,4 @@
 import 'package:geolocator/geolocator.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 
 class NativeDeviceService {
@@ -45,17 +44,11 @@ class NativeDeviceService {
     );
   }
 
-  Future<String?> elegirAudio() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: const ['mp3', 'm4a', 'wav', 'aac', 'ogg'],
-      allowMultiple: false,
-    );
+  Future<XFile?> tomarImagen() {
+    return tomarFoto();
+  }
 
-    if (result == null || result.files.isEmpty) {
-      return null;
-    }
-
-    return result.files.single.path;
+  Future<XFile?> elegirImagenGaleria() {
+    return elegirFotoGaleria();
   }
 }

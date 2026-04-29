@@ -1,3 +1,5 @@
+import 'package:http/http.dart' as http;
+
 import '../../core/services/api_client.dart';
 import 'conductor_models.dart';
 
@@ -58,18 +60,31 @@ class ConductorApiService {
     required double longitud,
     required String prioridad,
     String? direccion,
+    String? imagePath,
+    String? audioPath,
   }) async {
-    final response = await _api.post(
+    final fields = <String, String>{
+      'vehiculo_id': vehiculoId,
+      'descripcion_conductor': descripcion.trim(),
+      'latitud_averia': latitud.toString(),
+      'longitud_averia': longitud.toString(),
+      'direccion_averia': (direccion ?? '').trim(),
+      'prioridad': prioridad,
+    };
+
+    final files = <http.MultipartFile>[];
+    if (imagePath != null && imagePath.isNotEmpty) {
+      files.add(await http.MultipartFile.fromPath('archivos', imagePath));
+    }
+    if (audioPath != null && audioPath.isNotEmpty) {
+      files.add(await http.MultipartFile.fromPath('archivos', audioPath));
+    }
+
+    final response = await _api.postMultipart(
       '/averias/',
       token: token,
-      body: {
-        'vehiculo_id': vehiculoId,
-        'descripcion_conductor': descripcion.trim(),
-        'latitud_averia': latitud,
-        'longitud_averia': longitud,
-        'direccion_averia': (direccion ?? '').trim(),
-        'prioridad': prioridad,
-      },
+      fields: fields,
+      files: files,
     );
 
     final data = response['data'];
@@ -97,7 +112,35 @@ class ConductorApiService {
     );
   }
 
-  Future<List<CategoriaServicioItem>> listCategorias(String token) async {
+  Future<AveriaItem> getAveria(String token, String averiaId) async {
+    final response = await _api.get('/averias/$averiaId', token: token);
+    final data = response['data'];
+    if (data is! Map<String, dynamic>) {
+      throw ApiException('No se pudo cargar la avería');
+    }
+    return AveriaItem.fromJson(data);
+  }
+
+  Future<DiagnosticoIAItem?> getDiagnosticoAveria(String token, String averiaId) async {
+    try {
+      return (await getAveria(token, averiaId)).diagnostico;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<List<TallerOpcionItem>> getTalleresDisponibles(
+    String token, {
+    required String averiaId,
+    String? categoriaId,
+  }) async {
+    final url = '/averias/$averiaId/talleres-disponibles'
+        '${categoriaId != null ? '?categoria_id=$categoriaId' : ''}';
+    final response = await _api.get(url, token: token);
+    return _asList(response['data']).map(TallerOpcionItem.fromJson).toList();
+  }
+
+  Future<List<CategoriaServicioItem>> listCategoriasServicio(String token) async {
     final response = await _api.get('/categorias-servicio', token: token);
     return _asList(response['data'])
         .map(CategoriaServicioItem.fromJson)

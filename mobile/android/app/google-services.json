@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "407634153072",
+    "project_id": "universidad-d6ecd",
+    "storage_bucket": "universidad-d6ecd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:407634153072:android:2d8e2792ffb8ba894e6eb5",
+        "android_client_info": {
+          "package_name": "com.uni.ra"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC64gN17hRcI7q8q_ODq1_VPnGsIkfT0Rw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

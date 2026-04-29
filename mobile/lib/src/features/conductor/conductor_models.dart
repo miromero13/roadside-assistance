@@ -40,6 +40,10 @@ class AveriaItem {
     required this.latitud,
     required this.longitud,
     required this.direccion,
+    this.imagenPrincipalUrl,
+    this.medios = const [],
+    this.diagnostico,
+    this.talleresDisponibles = const [],
   });
 
   final String id;
@@ -50,6 +54,10 @@ class AveriaItem {
   final double latitud;
   final double longitud;
   final String? direccion;
+  final String? imagenPrincipalUrl;
+  final List<MedioAveriaItem> medios;
+  final DiagnosticoIAItem? diagnostico;
+  final List<TallerOpcionItem> talleresDisponibles;
 
   factory AveriaItem.fromJson(Map<String, dynamic> json) {
     double toDouble(dynamic value) {
@@ -59,6 +67,9 @@ class AveriaItem {
       return double.tryParse('$value') ?? 0;
     }
 
+    final medios = json['medios'] as List?;
+    final diagnostico = json['diagnostico_ia'];
+    final talleres = json['talleres_disponibles'] as List?;
     return AveriaItem(
       id: json['id'] as String? ?? '',
       vehiculoId: json['vehiculo_id'] as String? ?? '',
@@ -68,6 +79,98 @@ class AveriaItem {
       latitud: toDouble(json['latitud_averia']),
       longitud: toDouble(json['longitud_averia']),
       direccion: json['direccion_averia'] as String?,
+      imagenPrincipalUrl: json['imagen_principal_url'] as String?,
+      medios: medios != null
+          ? medios.whereType<Map<String, dynamic>>().map(MedioAveriaItem.fromJson).toList()
+          : [],
+      diagnostico: diagnostico is Map<String, dynamic>
+          ? DiagnosticoIAItem.fromJson(diagnostico)
+          : null,
+      talleresDisponibles: talleres != null
+          ? talleres.whereType<Map<String, dynamic>>().map(TallerOpcionItem.fromJson).toList()
+          : [],
+    );
+  }
+}
+
+class MedioAveriaItem {
+  MedioAveriaItem({
+    required this.id,
+    required this.tipo,
+    required this.url,
+    required this.orden,
+  });
+
+  final String id;
+  final String tipo;
+  final String url;
+  final int orden;
+
+  factory MedioAveriaItem.fromJson(Map<String, dynamic> json) {
+    return MedioAveriaItem(
+      id: json['id'] as String? ?? '',
+      tipo: json['tipo'] as String? ?? '',
+      url: json['url'] as String? ?? '',
+      orden: json['orden_visualizacion'] as int? ?? 1,
+    );
+  }
+}
+
+class DiagnosticoIAItem {
+  DiagnosticoIAItem({
+    required this.categoriaId,
+    required this.categoria,
+    required this.confianza,
+    required this.diagnostico,
+    required this.notasTaller,
+    required this.urgencia,
+    required this.danosVisibles,
+    required this.costoMin,
+    required this.costoMax,
+    required this.requiereRevisionManual,
+    required this.resumen,
+  });
+
+  final String? categoriaId;
+  final String categoria;
+  final double confianza;
+  final String diagnostico;
+  final String notasTaller;
+  final String urgencia;
+  final String? danosVisibles;
+  final double? costoMin;
+  final double? costoMax;
+  final bool requiereRevisionManual;
+  final String? resumen;
+
+  factory DiagnosticoIAItem.fromJson(Map<String, dynamic> json) {
+    double toDouble(dynamic value) {
+      if (value is num) {
+        return value.toDouble();
+      }
+      return double.tryParse('$value') ?? 0;
+    }
+
+    String categoria = 'incierto';
+    final categoriaValue = json['categoria'];
+    if (categoriaValue is Map<String, dynamic>) {
+      categoria = categoriaValue['nombre'] as String? ?? categoria;
+    } else if (categoriaValue is String && categoriaValue.isNotEmpty) {
+      categoria = categoriaValue;
+    }
+
+    return DiagnosticoIAItem(
+      categoriaId: json['categoria_id'] as String?,
+      categoria: categoria,
+      confianza: toDouble(json['confianza_categoria'] ?? json['nivel_confianza']),
+      diagnostico: (json['diagnostico'] ?? json['analisis']) as String? ?? '',
+      notasTaller: (json['notas_taller'] ?? json['recomendacion']) as String? ?? '',
+      urgencia: json['urgencia'] as String? ?? 'media',
+      danosVisibles: json['danos_visibles'] as String?,
+      costoMin: json['costo_estimado_min'] != null ? toDouble(json['costo_estimado_min']) : null,
+      costoMax: json['costo_estimado_max'] != null ? toDouble(json['costo_estimado_max']) : null,
+      requiereRevisionManual: json['requiere_revision_manual'] as bool? ?? false,
+      resumen: json['resumen_automatico'] as String?,
     );
   }
 }
@@ -85,6 +188,45 @@ class CategoriaServicioItem {
     return CategoriaServicioItem(
       id: json['id'] as String? ?? '',
       nombre: json['nombre'] as String? ?? '',
+    );
+  }
+}
+
+class TallerOpcionItem {
+  TallerOpcionItem({
+    required this.tallerId,
+    required this.nombre,
+    required this.distanciaKm,
+    required this.tiempoAproximadoMin,
+    required this.radioCobertura,
+    required this.calificacionPromedio,
+    required this.aceptaDomicilio,
+  });
+
+  final String tallerId;
+  final String nombre;
+  final double distanciaKm;
+  final int? tiempoAproximadoMin;
+  final double radioCobertura;
+  final double calificacionPromedio;
+  final bool aceptaDomicilio;
+
+  factory TallerOpcionItem.fromJson(Map<String, dynamic> json) {
+    double toDouble(dynamic value) {
+      if (value is num) {
+        return value.toDouble();
+      }
+      return double.tryParse('$value') ?? 0;
+    }
+
+    return TallerOpcionItem(
+      tallerId: json['taller_id'] as String? ?? '',
+      nombre: json['nombre'] as String? ?? 'Taller',
+      distanciaKm: toDouble(json['distancia_km']),
+      tiempoAproximadoMin: json['tiempo_aproximado_min'] as int?,
+      radioCobertura: toDouble(json['radio_cobertura_km']),
+      calificacionPromedio: toDouble(json['calificacion_promedio']),
+      aceptaDomicilio: json['acepta_domicilio'] as bool? ?? false,
     );
   }
 }

@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/usuario_auth.dart';
@@ -13,6 +15,7 @@ class SessionController extends ChangeNotifier {
 
   final ApiClient _api = ApiClient();
   late final PushDeviceService _push = PushDeviceService(_api);
+  StreamSubscription<String>? _pushTokenRefreshSubscription;
 
   String? _token;
   UsuarioAuth? _usuarioActual;
@@ -39,7 +42,6 @@ class SessionController extends ChangeNotifier {
 
     try {
       await cargarPerfil();
-      await _registrarPushSilencioso();
     } catch (_) {
       await logout(revocarToken: false);
     }
@@ -65,6 +67,7 @@ class SessionController extends ChangeNotifier {
     _usuarioActual = UsuarioAuth.fromJson(usuarioJson);
     await _persistirSesion();
     await _registrarPushSilencioso();
+    _iniciarEscuchaPush();
     notifyListeners();
   }
 
@@ -97,6 +100,7 @@ class SessionController extends ChangeNotifier {
     _usuarioActual = UsuarioAuth.fromJson(usuarioJson);
     await _persistirSesion();
     await _registrarPushSilencioso();
+    _iniciarEscuchaPush();
     notifyListeners();
   }
 
@@ -114,6 +118,7 @@ class SessionController extends ChangeNotifier {
     _usuarioActual = UsuarioAuth.fromJson(data);
     await _persistirSesion();
     await _registrarPushSilencioso();
+    _iniciarEscuchaPush();
     notifyListeners();
   }
 
@@ -162,6 +167,8 @@ class SessionController extends ChangeNotifier {
       }
     }
 
+    await _cancelarEscuchaPush();
+
     if (revocarToken && _token != null && _token!.isNotEmpty) {
       try {
         await _api.post('/auth/logout', body: const {}, token: _token);
@@ -199,9 +206,42 @@ class SessionController extends ChangeNotifier {
     }
 
     try {
+      debugPrint('SessionController: registrando push para usuario=${_usuarioActual?.id}');
       await _push.asegurarRegistroDispositivo(tokenActual);
     } catch (_) {
-      // ignore
+      debugPrint('SessionController: fallo al registrar push');
     }
+  }
+
+  void _iniciarEscuchaPush() {
+    final tokenActual = _token;
+    if (tokenActual == null || tokenActual.isEmpty) {
+      return;
+    }
+
+    _pushTokenRefreshSubscription?.cancel();
+    _pushTokenRefreshSubscription = FirebaseMessaging.instance.onTokenRefresh.listen((token) async {
+      debugPrint('SessionController: token FCM refrescado=${token.substring(0, 12)}');
+      if (_token == null || _token != tokenActual) {
+        return;
+      }
+
+      try {
+        await _push.asegurarRegistroDispositivo(tokenActual, tokenPush: token);
+      } catch (_) {
+        // ignore
+      }
+    });
+  }
+
+  Future<void> _cancelarEscuchaPush() async {
+    await _pushTokenRefreshSubscription?.cancel();
+    _pushTokenRefreshSubscription = null;
+  }
+
+  @override
+  void dispose() {
+    _pushTokenRefreshSubscription?.cancel();
+    super.dispose();
   }
 }

@@ -265,7 +265,7 @@ class _ConductorOrdenCreatePageState extends State<ConductorOrdenCreatePage> {
 
     try {
       final averias = await widget.api.listAverias(token);
-      final categorias = await widget.api.listCategorias(token);
+      final categorias = await widget.api.listCategoriasServicio(token);
 
       if (!mounted) {
         return;

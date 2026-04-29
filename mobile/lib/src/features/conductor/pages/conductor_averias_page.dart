@@ -97,10 +97,16 @@ class _ConductorAveriasPageState extends State<ConductorAveriasPage> {
               ),
             ..._averias.map(
               (averia) => Card(
-                child: ListTile(
-                  title: Text(averia.descripcion),
-                  subtitle: Text('${averia.estado} · ${averia.prioridad}'),
-                  trailing: Text('#${averia.id.substring(0, 8)}'),
+                child: InkWell(
+                  onTap: () => Navigator.of(context).pushNamed(
+                    '/conductor/averia-detalle',
+                    arguments: averia.id,
+                  ),
+                  child: ListTile(
+                    title: Text(averia.descripcion),
+                    subtitle: Text('${averia.estado} · ${averia.prioridad}'),
+                    trailing: Text('#${averia.id.substring(0, 8)}'),
+                  ),
                 ),
               ),
             ),
@@ -151,8 +157,7 @@ class _ConductorAveriasPageState extends State<ConductorAveriasPage> {
   }
 
   Future<void> _abrirCrearAveria() async {
-    final messenger = ScaffoldMessenger.of(context);
-    final mensaje = await Navigator.of(context).push<String?>(
+    await Navigator.of(context).push<void>(
       MaterialPageRoute(
         builder: (_) => ConductorAveriaCreatePage(
           session: widget.session,
@@ -165,9 +170,7 @@ class _ConductorAveriasPageState extends State<ConductorAveriasPage> {
       return;
     }
 
-    if (mensaje != null) {
-      await _load();
-      messenger.showSnackBar(SnackBar(content: Text(mensaje)));
-    }
+    // Reload averías when returning from create/detail flow
+    await _load();
   }
 }

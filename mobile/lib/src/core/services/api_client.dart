@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
@@ -20,11 +21,17 @@ class ApiClient {
     String path, {
     String? token,
   }) async {
-    final response = await _http.get(
-      _uri(path),
-      headers: _headers(token: token),
-    );
-    return _decode(response);
+    try {
+      final response = await _http.get(
+        _uri(path),
+        headers: _headers(token: token),
+      );
+      return _decode(response);
+    } on SocketException catch (_) {
+      throw ApiException(_connectionErrorMessage());
+    } on HttpException catch (_) {
+      throw ApiException(_connectionErrorMessage());
+    }
   }
 
   Future<Map<String, dynamic>> post(
@@ -32,12 +39,40 @@ class ApiClient {
     required Map<String, dynamic> body,
     String? token,
   }) async {
-    final response = await _http.post(
-      _uri(path),
-      headers: _headers(token: token),
-      body: jsonEncode(body),
-    );
-    return _decode(response);
+    try {
+      final response = await _http.post(
+        _uri(path),
+        headers: _headers(token: token),
+        body: jsonEncode(body),
+      );
+      return _decode(response);
+    } on SocketException catch (_) {
+      throw ApiException(_connectionErrorMessage());
+    } on HttpException catch (_) {
+      throw ApiException(_connectionErrorMessage());
+    }
+  }
+
+  Future<Map<String, dynamic>> postMultipart(
+    String path, {
+    required Map<String, String> fields,
+    List<http.MultipartFile> files = const [],
+    String? token,
+  }) async {
+    try {
+      final request = http.MultipartRequest('POST', _uri(path));
+      request.headers.addAll(_headers(token: token, jsonContentType: false));
+      request.fields.addAll(fields);
+      request.files.addAll(files);
+
+      final streamedResponse = await _http.send(request);
+      final response = await http.Response.fromStream(streamedResponse);
+      return _decode(response);
+    } on SocketException catch (_) {
+      throw ApiException(_connectionErrorMessage());
+    } on HttpException catch (_) {
+      throw ApiException(_connectionErrorMessage());
+    }
   }
 
   Future<Map<String, dynamic>> put(
@@ -45,23 +80,35 @@ class ApiClient {
     required Map<String, dynamic> body,
     String? token,
   }) async {
-    final response = await _http.put(
-      _uri(path),
-      headers: _headers(token: token),
-      body: jsonEncode(body),
-    );
-    return _decode(response);
+    try {
+      final response = await _http.put(
+        _uri(path),
+        headers: _headers(token: token),
+        body: jsonEncode(body),
+      );
+      return _decode(response);
+    } on SocketException catch (_) {
+      throw ApiException(_connectionErrorMessage());
+    } on HttpException catch (_) {
+      throw ApiException(_connectionErrorMessage());
+    }
   }
 
   Future<Map<String, dynamic>> delete(
     String path, {
     String? token,
   }) async {
-    final response = await _http.delete(
-      _uri(path),
-      headers: _headers(token: token),
-    );
-    return _decode(response);
+    try {
+      final response = await _http.delete(
+        _uri(path),
+        headers: _headers(token: token),
+      );
+      return _decode(response);
+    } on SocketException catch (_) {
+      throw ApiException(_connectionErrorMessage());
+    } on HttpException catch (_) {
+      throw ApiException(_connectionErrorMessage());
+    }
   }
 
   Uri _uri(String path) {
@@ -69,11 +116,17 @@ class ApiClient {
     return Uri.parse('${AppConfig.apiBaseUrl}$normalizedPath');
   }
 
-  Map<String, String> _headers({String? token}) {
+  Map<String, String> _headers({
+    String? token,
+    bool jsonContentType = true,
+  }) {
     final headers = <String, String>{
-      'Content-Type': 'application/json',
       'Accept': 'application/json',
     };
+
+    if (jsonContentType) {
+      headers['Content-Type'] = 'application/json';
+    }
 
     if (token != null && token.isNotEmpty) {
       headers['Authorization'] = 'Bearer $token';
@@ -100,5 +153,10 @@ class ApiClient {
       throw ApiException(detail);
     }
     throw ApiException('Error HTTP ${response.statusCode}');
+  }
+
+  String _connectionErrorMessage() {
+    return 'No se pudo conectar con el backend en ${AppConfig.apiBaseUrl}. '
+        'Verifica la IP y que el celular y la PC estén en la misma red.';
   }
 }

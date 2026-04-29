@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 
+import 'core/services/api_client.dart';
 import 'core/services/session_controller.dart';
 import 'features/auth/auth_page.dart';
+import 'features/conductor/conductor_api_service.dart';
+import 'features/conductor/pages/conductor_averia_detalle_page.dart';
+import 'features/conductor/pages/conductor_averia_diagnostico_taller_page.dart';
 import 'features/home/home_page.dart';
 
 class AciMobileApp extends StatefulWidget {
@@ -37,6 +41,7 @@ class _AciMobileAppState extends State<AciMobileApp> {
         scaffoldBackgroundColor: const Color(0xFFF4F6F9),
         useMaterial3: true,
       ),
+      onGenerateRoute: _generateRoute,
       home: FutureBuilder<void>(
         future: _bootstrapFuture,
         builder: (context, snapshot) {
@@ -56,6 +61,35 @@ class _AciMobileAppState extends State<AciMobileApp> {
         },
       ),
     );
+  }
+
+  Route<dynamic>? _generateRoute(RouteSettings settings) {
+    final conductorApi = ConductorApiService(ApiClient());
+
+    switch (settings.name) {
+      case '/conductor/averia-detalle':
+        final averiaId = settings.arguments as String?;
+        if (averiaId == null) return null;
+        return MaterialPageRoute(
+          builder: (_) => ConductorAveriaDetallePage(
+            session: _session,
+            api: conductorApi,
+            averiaId: averiaId,
+          ),
+        );
+
+      case '/conductor/averia-diagnostico-taller':
+        final averia = settings.arguments as dynamic;
+        if (averia == null) return null;
+        return MaterialPageRoute(
+          builder: (_) => ConductorAveriaDiagnosticoTallerPage(
+            session: _session,
+            api: conductorApi,
+            averia: averia,
+          ),
+        );
+    }
+    return null;
   }
 }
 

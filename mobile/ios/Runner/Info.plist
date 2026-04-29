@@ -53,5 +53,7 @@
 	<string>Usamos tu galería para adjuntar evidencias fotográficas de la avería.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Necesitamos acceso para guardar y gestionar evidencias de asistencia.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Usamos el micrófono para grabar el audio en vivo de la avería.</string>
 </dict>
 </plist>

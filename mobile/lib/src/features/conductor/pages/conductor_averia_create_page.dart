@@ -1,12 +1,18 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_sound/flutter_sound.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../../core/services/api_client.dart';
 import '../../../core/services/native_device_service.dart';
 import '../../../core/services/session_controller.dart';
 import '../conductor_api_service.dart';
 import '../conductor_models.dart';
+import 'conductor_ubicacion_mapa_page.dart';
 
 class ConductorAveriaCreatePage extends StatefulWidget {
   const ConductorAveriaCreatePage({
@@ -26,34 +32,39 @@ class ConductorAveriaCreatePage extends StatefulWidget {
 class _ConductorAveriaCreatePageState extends State<ConductorAveriaCreatePage> {
   final _formKey = GlobalKey<FormState>();
   final _descripcionCtrl = TextEditingController();
-  final _latitudCtrl = TextEditingController();
-  final _longitudCtrl = TextEditingController();
-  final _direccionCtrl = TextEditingController();
 
   final NativeDeviceService _native = NativeDeviceService();
+  final FlutterSoundRecorder _recorder = FlutterSoundRecorder();
 
+  GoogleMapController? _mapController;
   List<VehiculoItem> _vehiculos = const [];
   String? _vehiculoId;
-  String? _fotoPath;
+  LatLng _ubicacionSeleccionada = const LatLng(-16.5000, -68.1500);
+  String? _imagenPath;
   String? _audioPath;
   String _prioridad = 'media';
   bool _loading = false;
+  bool _recorderReady = false;
+  bool _grabandoAudio = false;
+  Duration _duracionAudio = Duration.zero;
+  Timer? _audioTimer;
+  Future<String?>? _googleMapsApiKeyFuture;
   String? _error;
 
   @override
   void initState() {
     super.initState();
-    _latitudCtrl.text = '-16.5000';
-    _longitudCtrl.text = '-68.1500';
     _load();
+    _prepararGrabador();
+    _cargarUbicacionInicial();
+    _googleMapsApiKeyFuture = _cargarGoogleMapsApiKey();
   }
 
   @override
   void dispose() {
+    _audioTimer?.cancel();
+    unawaited(_recorder.closeRecorder());
     _descripcionCtrl.dispose();
-    _latitudCtrl.dispose();
-    _longitudCtrl.dispose();
-    _direccionCtrl.dispose();
     super.dispose();
   }
 
@@ -128,9 +139,12 @@ class _ConductorAveriaCreatePageState extends State<ConductorAveriaCreatePage> {
                         controller: _descripcionCtrl,
                         maxLines: 2,
                         decoration:
-                            const InputDecoration(labelText: 'Descripción'),
-                        validator: _required,
+                            const InputDecoration(
+                              labelText: 'Descripción (opcional)',
+                            ),
                       ),
+                      const SizedBox(height: 10),
+                      _buildMapa(),
                       const SizedBox(height: 10),
                       Row(
                         children: [
@@ -143,105 +157,26 @@ class _ConductorAveriaCreatePageState extends State<ConductorAveriaCreatePage> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: _loading ? null : _tomarFoto,
-                              icon: const Icon(Icons.photo_camera_outlined),
-                              label: const Text('Tomar foto'),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: _loading ? null : _elegirFotoGaleria,
-                              icon: const Icon(Icons.photo_library_outlined),
-                              label: const Text('Galería'),
-                            ),
-                          ),
-                        ],
-                      ),
                       const SizedBox(height: 8),
                       Row(
                         children: [
                           Expanded(
                             child: OutlinedButton.icon(
-                              onPressed: _loading ? null : _elegirAudio,
-                              icon: const Icon(Icons.audio_file_outlined),
-                              label: const Text('Adjuntar audio'),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: _loading ||
-                                      (_fotoPath == null && _audioPath == null)
-                                  ? null
-                                  : _limpiarAdjuntos,
-                              icon: const Icon(Icons.delete_outline),
-                              label: const Text('Limpiar adjuntos'),
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (_fotoPath != null) ...[
-                        const SizedBox(height: 10),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.file(
-                            File(_fotoPath!),
-                            height: 120,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Foto lista para anexar en la avería',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                      if (_audioPath != null) ...[
-                        const SizedBox(height: 6),
-                        Text(
-                          'Audio listo para anexar: ${_audioPath!.split(Platform.pathSeparator).last}',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextFormField(
-                              controller: _latitudCtrl,
-                              keyboardType: const TextInputType.numberWithOptions(
-                                decimal: true,
-                              ),
-                              decoration:
-                                  const InputDecoration(labelText: 'Latitud'),
-                              validator: _required,
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: TextFormField(
-                              controller: _longitudCtrl,
-                              keyboardType: const TextInputType.numberWithOptions(
-                                decimal: true,
-                              ),
-                              decoration:
-                                  const InputDecoration(labelText: 'Longitud'),
-                              validator: _required,
+                              onPressed: _loading ? null : _abrirMapaCompleto,
+                              icon: const Icon(Icons.map_outlined),
+                              label: const Text('Abrir mapa completo'),
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 10),
-                      TextFormField(
-                        controller: _direccionCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'Dirección (opcional)',
-                        ),
+                      _buildImagenAdjunta(),
+                      const SizedBox(height: 10),
+                      _buildGrabadorAudio(),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Adjuntos: ${_imagenPath == null ? 'sin imagen' : 'imagen lista'} / ${_audioPath == null ? 'sin audio' : 'audio listo'}',
+                        style: Theme.of(context).textTheme.bodySmall,
                       ),
                       const SizedBox(height: 10),
                       DropdownButtonFormField<String>(
@@ -278,8 +213,9 @@ class _ConductorAveriaCreatePageState extends State<ConductorAveriaCreatePage> {
                       ],
                       const SizedBox(height: 12),
                       FilledButton(
-                        onPressed:
-                            _loading || _vehiculos.isEmpty ? null : _crearAveria,
+                        onPressed: _loading || _vehiculos.isEmpty || _grabandoAudio
+                            ? null
+                            : _crearAveria,
                         child: Text(_loading ? 'Guardando...' : 'Registrar'),
                       ),
                     ],
@@ -291,13 +227,6 @@ class _ConductorAveriaCreatePageState extends State<ConductorAveriaCreatePage> {
         ),
       ),
     );
-  }
-
-  String? _required(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Campo requerido';
-    }
-    return null;
   }
 
   Future<void> _load() async {
@@ -338,6 +267,37 @@ class _ConductorAveriaCreatePageState extends State<ConductorAveriaCreatePage> {
     }
   }
 
+  Future<void> _prepararGrabador() async {
+    try {
+      await _recorder.openRecorder();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _recorderReady = true;
+      });
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _error = 'No se pudo inicializar el micrófono: $e';
+      });
+    }
+  }
+
+  Future<void> _cargarUbicacionInicial() async {
+    try {
+      final position = await _native.obtenerUbicacionActual();
+      if (!mounted) {
+        return;
+      }
+      _actualizarUbicacion(LatLng(position.latitude, position.longitude));
+    } catch (_) {
+      // Se mantiene la ubicación por defecto si no hay permiso.
+    }
+  }
+
   Future<void> _crearAveria() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -345,15 +305,6 @@ class _ConductorAveriaCreatePageState extends State<ConductorAveriaCreatePage> {
 
     final token = widget.session.token;
     if (token == null || token.isEmpty || _vehiculoId == null) {
-      return;
-    }
-
-    final latitud = double.tryParse(_latitudCtrl.text);
-    final longitud = double.tryParse(_longitudCtrl.text);
-    if (latitud == null || longitud == null) {
-      setState(() {
-        _error = 'Latitud o longitud inválida';
-      });
       return;
     }
 
@@ -365,27 +316,24 @@ class _ConductorAveriaCreatePageState extends State<ConductorAveriaCreatePage> {
     var shouldClose = false;
 
     try {
-      final averia = await widget.api.createAveria(
+      await widget.api.createAveria(
         token,
         vehiculoId: _vehiculoId!,
         descripcion: _descripcionCtrl.text,
-        latitud: latitud,
-        longitud: longitud,
+        latitud: _ubicacionSeleccionada.latitude,
+        longitud: _ubicacionSeleccionada.longitude,
         prioridad: _prioridad,
-        direccion: _direccionCtrl.text,
+        direccion: _direccionSeleccionada,
+        imagePath: _imagenPath,
+        audioPath: _audioPath,
       );
-
-      final erroresAdjuntos = await _subirAdjuntos(token, averia.id);
-      final mensaje = erroresAdjuntos == 0
-          ? 'Avería registrada correctamente'
-          : 'Avería registrada, pero $erroresAdjuntos adjunto(s) no se pudieron enviar';
 
       if (!mounted) {
         return;
       }
 
       shouldClose = true;
-      Navigator.of(context).pop(mensaje);
+      Navigator.of(context).pop('Avería registrada correctamente');
     } on ApiException catch (e) {
       if (!mounted) {
         return;
@@ -413,10 +361,7 @@ class _ConductorAveriaCreatePageState extends State<ConductorAveriaCreatePage> {
       if (!mounted) {
         return;
       }
-      setState(() {
-        _latitudCtrl.text = position.latitude.toStringAsFixed(6);
-        _longitudCtrl.text = position.longitude.toStringAsFixed(6);
-      });
+      _actualizarUbicacion(LatLng(position.latitude, position.longitude));
     } catch (e) {
       if (!mounted) {
         return;
@@ -433,103 +378,345 @@ class _ConductorAveriaCreatePageState extends State<ConductorAveriaCreatePage> {
     }
   }
 
-  Future<void> _tomarFoto() async {
-    try {
-      final file = await _native.tomarFoto();
-      if (file == null || !mounted) {
+  Widget _buildMapa() {
+    return FutureBuilder<String?>(
+      future: _googleMapsApiKeyFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const SizedBox(
+            height: 260,
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if ((snapshot.data ?? '').isEmpty) {
+          return Card(
+            color: Theme.of(context).colorScheme.errorContainer,
+            child: const Padding(
+              padding: EdgeInsets.all(12),
+              child: Text(
+                'Falta configurar GOOGLE_MAPS_API_KEY en Android. Agrega la clave en `mobile/android/local.properties`.',
+              ),
+            ),
+          );
+        }
+
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: SizedBox(
+            height: 260,
+            child: GoogleMap(
+              initialCameraPosition: CameraPosition(
+                target: _ubicacionSeleccionada,
+                zoom: 15,
+              ),
+              onMapCreated: (controller) {
+                _mapController = controller;
+                unawaited(
+                  controller.animateCamera(
+                    CameraUpdate.newLatLngZoom(_ubicacionSeleccionada, 15),
+                  ),
+                );
+              },
+              markers: {
+                Marker(
+                  markerId: const MarkerId('averia'),
+                  position: _ubicacionSeleccionada,
+                ),
+              },
+              myLocationButtonEnabled: false,
+              myLocationEnabled: false,
+              zoomControlsEnabled: false,
+              onTap: _actualizarUbicacion,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildGrabadorAudio() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              _grabandoAudio ? 'Grabando audio en vivo' : 'Audio en vivo',
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              _grabandoAudio
+                  ? 'Duración: ${_formatearDuracion(_duracionAudio)}'
+                  : (_audioPath == null ? 'Aún no grabaste audio.' : 'Audio listo para enviar.'),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: _loading || !_recorderReady ? null : _alternarGrabacion,
+                    icon: Icon(_grabandoAudio ? Icons.stop : Icons.mic),
+                    label: Text(_grabandoAudio ? 'Detener grabación' : 'Grabar audio'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _loading || _grabandoAudio || _audioPath == null
+                        ? null
+                        : _limpiarAudio,
+                    icon: const Icon(Icons.delete_outline),
+                    label: const Text('Borrar audio'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImagenAdjunta() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Imagen para diagnóstico',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              _imagenPath == null
+                  ? 'Adjunta una foto para ayudar a la IA con el diagnóstico.'
+                  : 'Imagen lista para enviar.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            if (_imagenPath != null) ...[
+              const SizedBox(height: 10),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.file(
+                  File(_imagenPath!),
+                  height: 180,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ],
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: _loading ? null : _tomarImagen,
+                    icon: const Icon(Icons.photo_camera_outlined),
+                    label: const Text('Tomar foto'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _loading ? null : _elegirImagen,
+                    icon: const Icon(Icons.photo_library_outlined),
+                    label: const Text('Galería'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  onPressed: _loading || _imagenPath == null ? null : _limpiarImagen,
+                  icon: const Icon(Icons.delete_outline),
+                  tooltip: 'Quitar imagen',
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _alternarGrabacion() async {
+    if (_grabandoAudio) {
+      await _detenerGrabacion();
+      return;
+    }
+
+    final permiso = await Permission.microphone.request();
+    if (!permiso.isGranted) {
+      if (!mounted) {
         return;
       }
       setState(() {
-        _fotoPath = file.path;
+        _error = 'Necesitamos permiso de micrófono para grabar el audio';
+      });
+      return;
+    }
+
+    final ruta = '${Directory.systemTemp.path}/averia_${DateTime.now().millisecondsSinceEpoch}.m4a';
+
+    try {
+      await _recorder.startRecorder(
+        toFile: ruta,
+        codec: Codec.aacMP4,
+        bitRate: 128000,
+        sampleRate: 44100,
+      );
+      _audioTimer?.cancel();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _grabandoAudio = true;
+        _audioPath = ruta;
+        _duracionAudio = Duration.zero;
+      });
+      _audioTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (!mounted) {
+          return;
+        }
+        setState(() {
+          _duracionAudio += const Duration(seconds: 1);
+        });
       });
     } catch (e) {
       if (!mounted) {
         return;
       }
       setState(() {
-        _error = '$e';
+        _error = 'No se pudo iniciar la grabación: $e';
       });
     }
   }
 
-  Future<void> _elegirFotoGaleria() async {
+  Future<void> _detenerGrabacion() async {
     try {
-      final file = await _native.elegirFotoGaleria();
-      if (file == null || !mounted) {
+      final path = await _recorder.stopRecorder();
+      _audioTimer?.cancel();
+      if (!mounted) {
         return;
       }
       setState(() {
-        _fotoPath = file.path;
+        _grabandoAudio = false;
+        if (path != null && path.isNotEmpty) {
+          _audioPath = path;
+        }
       });
     } catch (e) {
       if (!mounted) {
         return;
       }
       setState(() {
-        _error = '$e';
+        _grabandoAudio = false;
+        _error = 'No se pudo detener la grabación: $e';
       });
     }
   }
 
-  Future<void> _elegirAudio() async {
-    try {
-      final path = await _native.elegirAudio();
-      if (path == null || !mounted) {
-        return;
-      }
-      setState(() {
-        _audioPath = path;
-      });
-    } catch (e) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _error = '$e';
-      });
-    }
-  }
-
-  void _limpiarAdjuntos() {
+  void _limpiarAudio() {
     setState(() {
-      _fotoPath = null;
       _audioPath = null;
+      _duracionAudio = Duration.zero;
     });
   }
 
-  Future<int> _subirAdjuntos(String token, String averiaId) async {
-    var errores = 0;
-    var orden = 1;
-
-    if (_fotoPath != null && _fotoPath!.isNotEmpty) {
-      try {
-        await widget.api.agregarMedioAveria(
-          token,
-          averiaId: averiaId,
-          tipo: 'foto',
-          url: _fotoPath!,
-          ordenVisualizacion: orden,
-        );
-      } catch (_) {
-        errores += 1;
+  Future<void> _tomarImagen() async {
+    try {
+      final imagen = await _native.tomarImagen();
+      if (!mounted || imagen == null) {
+        return;
       }
-      orden += 1;
+      setState(() {
+        _imagenPath = imagen.path;
+      });
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _error = 'No se pudo tomar la foto: $e';
+      });
+    }
+  }
+
+  Future<void> _elegirImagen() async {
+    try {
+      final imagen = await _native.elegirImagenGaleria();
+      if (!mounted || imagen == null) {
+        return;
+      }
+      setState(() {
+        _imagenPath = imagen.path;
+      });
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _error = 'No se pudo elegir la foto: $e';
+      });
+    }
+  }
+
+  void _limpiarImagen() {
+    setState(() {
+      _imagenPath = null;
+    });
+  }
+
+  Future<void> _abrirMapaCompleto() async {
+    final nuevaUbicacion = await Navigator.of(context).push<LatLng>(
+      MaterialPageRoute(
+        builder: (_) => ConductorUbicacionMapaPage(
+          ubicacionInicial: _ubicacionSeleccionada,
+        ),
+      ),
+    );
+
+    if (!mounted || nuevaUbicacion == null) {
+      return;
     }
 
-    if (_audioPath != null && _audioPath!.isNotEmpty) {
-      try {
-        await widget.api.agregarMedioAveria(
-          token,
-          averiaId: averiaId,
-          tipo: 'audio',
-          url: _audioPath!,
-          ordenVisualizacion: orden,
-        );
-      } catch (_) {
-        errores += 1;
-      }
-    }
+    _actualizarUbicacion(nuevaUbicacion);
+  }
 
-    return errores;
+  void _actualizarUbicacion(LatLng ubicacion) {
+    setState(() {
+      _ubicacionSeleccionada = ubicacion;
+    });
+
+    unawaited(
+      _mapController?.animateCamera(
+        CameraUpdate.newLatLng(ubicacion),
+      ),
+    );
+  }
+
+  String get _direccionSeleccionada {
+    return 'Lat ${_ubicacionSeleccionada.latitude.toStringAsFixed(6)}, '
+        'Lng ${_ubicacionSeleccionada.longitude.toStringAsFixed(6)}';
+  }
+
+  String _formatearDuracion(Duration duration) {
+    final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return '$minutes:$seconds';
+  }
+
+  Future<String?> _cargarGoogleMapsApiKey() async {
+    try {
+      const channel = MethodChannel('app/google_maps_config');
+      final key = await channel.invokeMethod<String>('getGoogleMapsApiKey');
+      return key;
+    } on PlatformException {
+      return null;
+    }
   }
 }

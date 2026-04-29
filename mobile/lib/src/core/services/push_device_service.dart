@@ -1,6 +1,5 @@
-import 'dart:math';
-
 import 'package:flutter/foundation.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api_client.dart';
@@ -13,11 +12,31 @@ class PushDeviceService {
 
   final ApiClient _api;
 
-  Future<void> asegurarRegistroDispositivo(String authToken) async {
+  Future<void> asegurarRegistroDispositivo(String authToken, {String? tokenPush}) async {
     final prefs = await SharedPreferences.getInstance();
-    final localToken = await _obtenerOTokenLocal(prefs);
+    final localToken = tokenPush ?? await _obtenerTokenFirebase();
+    if (localToken == null || localToken.isEmpty) {
+      debugPrint('PushDeviceService: no hay token FCM para registrar');
+      return;
+    }
+
+    debugPrint('PushDeviceService: asegurando registro con token=${localToken.substring(0, 12)}');
+
+    final storedToken = prefs.getString(_pushTokenKey);
+    final deviceId = prefs.getString(_pushDeviceIdKey);
+    if (storedToken != null && storedToken != localToken && deviceId != null && deviceId.isNotEmpty) {
+      try {
+        debugPrint('PushDeviceService: borrando dispositivo previo id=$deviceId');
+        await _api.delete('/push/dispositivos/$deviceId', token: authToken);
+      } catch (_) {
+        // ignore
+      }
+      await prefs.remove(_pushDeviceIdKey);
+    }
+
     final response = await _api.get('/push/dispositivos/', token: authToken);
     final data = response['data'];
+    debugPrint('PushDeviceService: dispositivos remotos obtenidos');
 
     String? existenteId;
     if (data is List) {
@@ -32,7 +51,9 @@ class PushDeviceService {
     }
 
     if (existenteId != null && existenteId.isNotEmpty) {
+      debugPrint('PushDeviceService: dispositivo ya existía id=$existenteId');
       await prefs.setString(_pushDeviceIdKey, existenteId);
+      await prefs.setString(_pushTokenKey, localToken);
       return;
     }
 
@@ -49,7 +70,9 @@ class PushDeviceService {
     if (created is Map<String, dynamic>) {
       final id = created['id'] as String?;
       if (id != null && id.isNotEmpty) {
+        debugPrint('PushDeviceService: dispositivo creado id=$id');
         await prefs.setString(_pushDeviceIdKey, id);
+        await prefs.setString(_pushTokenKey, localToken);
       }
     }
   }
@@ -58,24 +81,27 @@ class PushDeviceService {
     final prefs = await SharedPreferences.getInstance();
     final deviceId = prefs.getString(_pushDeviceIdKey);
     if (deviceId == null || deviceId.isEmpty) {
+      debugPrint('PushDeviceService: no hay dispositivo para desactivar');
       return;
     }
 
+    debugPrint('PushDeviceService: desactivando dispositivo id=$deviceId');
     await _api.delete('/push/dispositivos/$deviceId', token: authToken);
     await prefs.remove(_pushDeviceIdKey);
+    await prefs.remove(_pushTokenKey);
   }
 
-  Future<String> _obtenerOTokenLocal(SharedPreferences prefs) async {
-    final existing = prefs.getString(_pushTokenKey);
-    if (existing != null && existing.length >= 10) {
-      return existing;
-    }
+  Future<String?> _obtenerTokenFirebase() async {
+    await FirebaseMessaging.instance.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+      provisional: false,
+    );
 
-    final seed = DateTime.now().microsecondsSinceEpoch;
-    final random = Random().nextInt(999999);
-    final generated = 'mobile-$_plataforma-$seed-$random';
-    await prefs.setString(_pushTokenKey, generated);
-    return generated;
+    final token = await FirebaseMessaging.instance.getToken();
+    debugPrint('PushDeviceService: token FCM obtenido=${token?.substring(0, 12)}');
+    return token;
   }
 
   String get _plataforma {
