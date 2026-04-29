@@ -32,10 +32,18 @@ from app.utils.response import response
 router = APIRouter(prefix="/averias", tags=["Averías"])
 
 
+def _imagen_principal_url(averia) -> str | None:
+    medios = sorted(getattr(averia, "medios", []), key=lambda item: getattr(item, "orden_visualizacion", 0))
+    for medio in medios:
+        if getattr(medio, "tipo", None) == MedioTipo.FOTO:
+            return medio.url
+    return None
+
+
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def crear_averia_con_medios_route(
     vehiculo_id: UUID = Form(...),
-    descripcion_conductor: str = Form(...),
+    descripcion_conductor: str = Form(default=""),
     latitud_averia: float = Form(...),
     longitud_averia: float = Form(...),
     direccion_averia: str | None = Form(None),
@@ -48,7 +56,7 @@ async def crear_averia_con_medios_route(
     Crea una avería con medios (fotos, audios, videos) en un solo request.
 
     Request:
-    - multipart/form-data con campos: vehiculo_id, descripcion, latitud, longitud, etc.
+    - multipart/form-data con campos: vehiculo_id, descripcion opcional, latitud, longitud, etc.
     - archivos[] (array de archivos)
     - tipo_media[] (array de tipos: foto|audio|video)
     """
@@ -92,7 +100,12 @@ async def crear_averia_con_medios_route(
                             tipo_media = MedioTipo.FOTO
 
                     agregar_medio_averia_con_archivo(
-                        db, averia, tipo_media, contenido, orden_visualizacion=idx + 1
+                        db,
+                        averia,
+                        tipo_media,
+                        contenido,
+                        orden_visualizacion=idx + 1,
+                        nombre_archivo_original=archivo.filename,
                     )
                 except Exception as e:
                     print(f"Error procesando archivo {archivo.filename}: {e}")
@@ -108,6 +121,7 @@ async def crear_averia_con_medios_route(
             data["diagnostico_ia"] = DiagnosticoIARead.model_validate(
                 averia.diagnostico_ia
             ).model_dump()
+        data["imagen_principal_url"] = _imagen_principal_url(averia)
 
         talleres_disponibles = obtener_talleres_disponibles_para_averia(db, averia.id)
         data["talleres_disponibles"] = [
@@ -174,6 +188,7 @@ def obtener_averia_route(
         data["diagnostico_ia"] = DiagnosticoIARead.model_validate(
             averia.diagnostico_ia
         ).model_dump()
+    data["imagen_principal_url"] = _imagen_principal_url(averia)
 
     talleres_disponibles = obtener_talleres_disponibles_para_averia(db, averia_id)
     data["talleres_disponibles"] = [

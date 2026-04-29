@@ -35,6 +35,7 @@
 - Current payment baseline: only order's conductor can create a single pago per orden with exact approved-budget amount; confirming pago creates 10% plataforma commission and auto-completes the orden.
 - Current invoice baseline: factura JSON can be generated from a completed pago, with a single factura per pago.
 - Current notification baseline: internal `notificaciones` are generated for key order/dispatch/budget/payment events and can be marked read by each user.
+- `FIREBASE_SERVICE_ACCOUNT_PATH` is resolved relative to `backend/` when it is not absolute, so the service account JSON can live in the backend root.
 - Current rating baseline: only the order's conductor can rate a completed order once; rating updates taller average and notifies taller.
 - Current chat baseline: order chat is available from accepted state onward; only order participants (conductor, order taller, active assigned mechanic, admin) can read/send messages.
 - Current chat baseline: chat also supports unread count and mark-all-read operations per participant (`/api/chats/{chat_id}/no-leidos/count`, `/api/chats/{chat_id}/leer-todo`).
@@ -82,7 +83,9 @@
 - Mobile Sprint 4 baseline is implemented: native capabilities are integrated for conductor averías (current geolocation + camera/gallery photo capture + audio file attachment) and session-level push-device registration/deactivation against `/api/push/dispositivos`.
 - Mobile conductor averías now also support video capture and live microphone recording before submitting the incident.
 - Mobile conductor averías create now uses Google Maps on Android; configure `GOOGLE_MAPS_API_KEY` in `mobile/android/local.properties` or the environment before running the app, or the map view will stay hidden behind a warning card.
+- Mobile push notifications on Android 13+ need runtime `POST_NOTIFICATIONS` permission; the app requests it at launch, so missing prompts usually mean the OS permission was denied.
 - Mobile structure entrypoints: `mobile/lib/main.dart`, `mobile/lib/src/app.dart`, `mobile/lib/src/core/services/session_controller.dart`, `mobile/lib/src/features/auth/auth_page.dart`, `mobile/lib/src/features/profile/profile_page.dart`, `mobile/lib/src/features/conductor/pages/conductor_vehiculos_page.dart`, `mobile/lib/src/features/conductor/pages/conductor_averias_page.dart`, `mobile/lib/src/features/conductor/pages/conductor_ordenes_page.dart`, `mobile/lib/src/features/conductor/pages/conductor_orden_detalle_page.dart`, `mobile/lib/src/features/taller/pages/taller_ordenes_page.dart`, `mobile/lib/src/features/taller/pages/taller_orden_detalle_page.dart`, `mobile/lib/src/features/taller/pages/taller_comisiones_page.dart`, `mobile/lib/src/features/taller/pages/taller_notificaciones_page.dart`, `mobile/lib/src/core/services/native_device_service.dart`, `mobile/lib/src/core/services/push_device_service.dart`.
+- Android package name for the mobile app is `com.uni.ra`; Firebase config lives at `mobile/android/app/google-services.json`.
 
 ## Verification Strategy
 - Validate only the app you changed (backend/frontend/mobile), since there is no unified monorepo pipeline.
@@ -90,6 +93,7 @@
 - Backend seed command available: `py scripts/seed_mvp.py`.
 - Backend smoke command available: `py scripts/smoke_e2e.py` (starts local uvicorn on port 8001 and validates the MVP end-to-end flow).
 - Backend admin QA command available: `py scripts/qa_admin_web.py` (starts local uvicorn on port 8001 and validates key admin endpoints used by web).
+- Push delivery in backend is optional and requires `FIREBASE_SERVICE_ACCOUNT_PATH` when you want real FCM sends; otherwise device registration still works and the app will just keep the tokens synced.
 - For frontend changes, at minimum verify `npm run build`.
 - For frontend release candidate, verify role-based route guards + auth token handling + main end-to-end happy paths (conductor and taller).
 - For mobile changes, at minimum verify `fvm flutter test`; for release hardening also run `fvm flutter analyze`.

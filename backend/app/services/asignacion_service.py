@@ -8,7 +8,11 @@ from app.models.finanzas import Presupuesto
 from app.models.orden import AsignacionOrden, OrdenServicio
 from app.models.taller import Mecanico
 from app.models.usuario import Usuario
-from app.services.notificacion_service import notificar_a_conductor_por_orden
+from app.services.notificacion_service import (
+    notificar_a_conductor_por_orden,
+    notificar_a_mecanicos_activos_por_orden,
+    notificar_a_taller_por_orden,
+)
 from app.services.orden_service import _registrar_historial_orden
 
 
@@ -97,6 +101,20 @@ def actualizar_estado_asignacion(
                 "Tecnico en camino",
                 "Tu mecanico ya va en camino al lugar de la averia.",
             )
+            notificar_a_taller_por_orden(
+                db,
+                orden,
+                TipoNotificacion.TECNICO_EN_CAMINO,
+                "Tecnico en camino",
+                "El mecanico ya va en camino a la averia.",
+            )
+            notificar_a_mecanicos_activos_por_orden(
+                db,
+                orden,
+                TipoNotificacion.TECNICO_EN_CAMINO,
+                "Orden en camino",
+                "La orden fue actualizada a en camino.",
+            )
 
     elif nuevo_estado == EstadoAsignacion.ATENDIENDO:
         if not _orden_tiene_presupuesto_aprobado(db, orden.id):
@@ -114,6 +132,27 @@ def actualizar_estado_asignacion(
                 EstadoOrdenServicio.EN_PROCESO,
                 usuario_mecanico.id,
                 observacion="Mecánico atendiendo la orden",
+            )
+            notificar_a_conductor_por_orden(
+                db,
+                orden,
+                TipoNotificacion.ORDEN_ACTUALIZADA,
+                "Orden en proceso",
+                "Tu orden ya está en proceso.",
+            )
+            notificar_a_taller_por_orden(
+                db,
+                orden,
+                TipoNotificacion.ORDEN_ACTUALIZADA,
+                "Orden en proceso",
+                "La orden ya está en proceso.",
+            )
+            notificar_a_mecanicos_activos_por_orden(
+                db,
+                orden,
+                TipoNotificacion.ORDEN_ACTUALIZADA,
+                "Orden en proceso",
+                "La orden ya está en proceso.",
             )
 
     elif nuevo_estado in {EstadoAsignacion.FINALIZADO, EstadoAsignacion.CANCELADO}:

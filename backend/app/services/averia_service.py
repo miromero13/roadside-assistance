@@ -89,6 +89,7 @@ def agregar_medio_averia_con_archivo(
     tipo: MedioTipo,
     contenido_archivo: bytes,
     orden_visualizacion: int = 1,
+    nombre_archivo_original: str | None = None,
 ) -> MedioAveria:
     """
     Agrega un medio a una avería guardando el archivo binario.
@@ -115,6 +116,8 @@ def agregar_medio_averia_con_archivo(
         MedioTipo.VIDEO: "mp4",
     }
     extension = extension_map.get(tipo, "bin")
+    if nombre_archivo_original and "." in nombre_archivo_original:
+        extension = nombre_archivo_original.rsplit(".", 1)[-1].lower()
 
     # Contar medios existentes
     medios_count = db.execute(

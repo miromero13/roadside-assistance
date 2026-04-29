@@ -19,6 +19,7 @@ from app.models.taller import Taller
 from app.models.usuario import Usuario
 from app.schemas.pago_schema import PagoCrearRequest
 from app.services.notificacion_service import notificar_a_conductor_y_taller_por_orden
+from app.services.notificacion_service import notificar_a_mecanicos_activos_por_orden
 from app.services.metrica_service import recalcular_metrica_orden
 from app.services.orden_service import _registrar_historial_orden
 from app.services.payment_gateway import DummyPaymentGateway
@@ -222,6 +223,13 @@ def confirmar_pago(db: Session, pago: Pago, referencia_externa: str | None = Non
             TipoNotificacion.PAGO_COMPLETADO,
             "Pago completado",
             "El pago fue confirmado y la orden se marco como completada.",
+        )
+        notificar_a_mecanicos_activos_por_orden(
+            db,
+            orden,
+            TipoNotificacion.ORDEN_ACTUALIZADA,
+            "Orden completada",
+            "La orden fue completada tras confirmar el pago.",
         )
 
     recalcular_metrica_orden(db, orden)

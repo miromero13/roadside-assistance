@@ -11,7 +11,7 @@ from app.schemas.catalogo_schema import CategoriaServicioRead
 
 class AveriaCrear(BaseModel):
     vehiculo_id: UUID
-    descripcion_conductor: str = Field(min_length=1)
+    descripcion_conductor: str = Field(default="")
     latitud_averia: float = Field(ge=-90, le=90)
     longitud_averia: float = Field(ge=-180, le=180)
     direccion_averia: str | None = None
@@ -96,6 +96,7 @@ class AveriaDetalleRead(AveriaRead):
     medios: list[MedioAveriaRead]
     diagnostico_ia: DiagnosticoIARead | None = None
     talleres_disponibles: list[TallerOpcionRead] = Field(default_factory=list)
+    imagen_principal_url: str | None = None
 
 
 class ListaTalleresDisponiblesResponse(BaseModel):

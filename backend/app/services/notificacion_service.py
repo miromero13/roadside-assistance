@@ -1,11 +1,16 @@
+import logging
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.averia import Averia
 from app.models.comunicacion import Notificacion
-from app.models.enums import TipoNotificacion
-from app.models.orden import OrdenServicio
-from app.models.taller import Taller
+from app.models.enums import EstadoAsignacion, TipoNotificacion
+from app.models.orden import AsignacionOrden, OrdenServicio
+from app.models.taller import Mecanico, Taller
+from app.services.push_service import enviar_push_a_usuario
+
+logger = logging.getLogger(__name__)
 
 
 def crear_notificacion(
@@ -16,6 +21,13 @@ def crear_notificacion(
     mensaje: str,
     orden_id=None,
 ) -> Notificacion:
+    logger.info(
+        "Creando notificacion usuario=%s tipo=%s orden_id=%s titulo=%s",
+        usuario_id,
+        tipo.value,
+        orden_id,
+        titulo,
+    )
     notificacion = Notificacion(
         usuario_id=usuario_id,
         orden_id=orden_id,
@@ -24,6 +36,17 @@ def crear_notificacion(
         tipo=tipo,
     )
     db.add(notificacion)
+    logger.info("Notificacion en cola para commit usuario=%s tipo=%s", usuario_id, tipo.value)
+    enviar_push_a_usuario(
+        db,
+        usuario_id,
+        titulo,
+        mensaje,
+        data={
+            "tipo": tipo.value,
+            "orden_id": str(orden_id) if orden_id else "",
+        },
+    )
     return notificacion
 
 
@@ -33,6 +56,39 @@ def _obtener_conductor_y_taller_usuario_ids(db: Session, orden: OrdenServicio):
     conductor_id = averia.usuario_id if averia else None
     taller_usuario_id = taller.usuario_id if taller else None
     return conductor_id, taller_usuario_id
+
+
+def _obtener_mecanicos_activos_usuario_ids(db: Session, orden: OrdenServicio):
+    return [
+        usuario_id
+        for (usuario_id,) in db.execute(
+            select(Mecanico.usuario_id)
+            .join(AsignacionOrden, AsignacionOrden.mecanico_id == Mecanico.id)
+            .where(
+                AsignacionOrden.orden_id == orden.id,
+                AsignacionOrden.estado.in_(
+                    {
+                        EstadoAsignacion.ASIGNADO,
+                        EstadoAsignacion.EN_CAMINO,
+                        EstadoAsignacion.ATENDIENDO,
+                    }
+                ),
+            )
+            .distinct()
+        ).all()
+    ]
+
+
+def notificar_a_mecanicos_activos_por_orden(
+    db: Session,
+    orden: OrdenServicio,
+    tipo: TipoNotificacion,
+    titulo: str,
+    mensaje: str,
+) -> None:
+    mecanicos_usuario_ids = _obtener_mecanicos_activos_usuario_ids(db, orden)
+    for mecanico_usuario_id in mecanicos_usuario_ids:
+        crear_notificacion(db, mecanico_usuario_id, tipo, titulo, mensaje, orden_id=orden.id)
 
 
 def notificar_a_conductor_por_orden(

@@ -114,6 +114,7 @@ class TipoNotificacion(str, enum.Enum):
     ORDEN_NUEVA = "orden_nueva"
     ORDEN_ACEPTADA = "orden_aceptada"
     ORDEN_RECHAZADA = "orden_rechazada"
+    ORDEN_ACTUALIZADA = "orden_actualizada"
     TECNICO_ASIGNADO = "tecnico_asignado"
     TECNICO_EN_CAMINO = "tecnico_en_camino"
     PRESUPUESTO_ENVIADO = "presupuesto_enviado"

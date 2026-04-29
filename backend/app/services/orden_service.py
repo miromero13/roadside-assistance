@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 
 from sqlalchemy import select
@@ -13,9 +14,12 @@ from app.schemas.orden_schema import OrdenCrearPorSeleccionManual
 from app.services.metrica_service import recalcular_metrica_orden
 from app.services.notificacion_service import (
     notificar_a_conductor_por_orden,
+    notificar_a_mecanicos_activos_por_orden,
     notificar_a_taller_por_orden,
 )
 from app.services.taller_disponibilidad_service import calcular_distancia_km
+
+logger = logging.getLogger(__name__)
 
 
 ESTADOS_ORDEN_ACTIVOS = {
@@ -143,6 +147,7 @@ def crear_orden_por_seleccion_manual(
         "Nueva orden",
         "Se recibió una nueva solicitud de asistencia para tu taller.",
     )
+    logger.info("Orden creada y notificada a taller orden_id=%s taller_id=%s", orden.id, orden.taller_id)
     db.commit()
     db.refresh(orden)
     return orden
@@ -189,6 +194,12 @@ def aceptar_orden_por_taller(
         TipoNotificacion.ORDEN_ACEPTADA,
         "Orden aceptada",
         "El taller acepto tu solicitud de asistencia.",
+    )
+    logger.info(
+        "Orden aceptada y notificacion generada orden_id=%s conductor_id=%s taller_id=%s",
+        orden.id,
+        orden.averia.usuario_id if orden.averia else None,
+        orden.taller_id,
     )
     db.commit()
     db.refresh(orden)
@@ -405,6 +416,7 @@ def asignar_mecanico_a_orden(
         notas=notas,
     )
     db.add(nueva_asignacion)
+    db.flush()
     mecanico.disponible = False
 
     estado_anterior = orden.estado
@@ -423,6 +435,20 @@ def asignar_mecanico_a_orden(
         TipoNotificacion.TECNICO_ASIGNADO,
         "Tecnico asignado",
         "Un mecanico fue asignado a tu orden.",
+    )
+    notificar_a_taller_por_orden(
+        db,
+        orden,
+        TipoNotificacion.TECNICO_ASIGNADO,
+        "Tecnico asignado",
+        "Se asigno un mecanico a la orden.",
+    )
+    notificar_a_mecanicos_activos_por_orden(
+        db,
+        orden,
+        TipoNotificacion.TECNICO_ASIGNADO,
+        "Orden asignada",
+        "Tienes una nueva orden asignada.",
     )
 
     db.commit()
@@ -548,6 +574,27 @@ def cancelar_orden(
         usuario_actual.id,
         observacion=motivo_cancelacion,
     )
+    notificar_a_conductor_por_orden(
+        db,
+        orden,
+        TipoNotificacion.ORDEN_ACTUALIZADA,
+        "Orden cancelada",
+        "Tu orden fue cancelada.",
+    )
+    notificar_a_taller_por_orden(
+        db,
+        orden,
+        TipoNotificacion.ORDEN_ACTUALIZADA,
+        "Orden cancelada",
+        "La orden fue cancelada.",
+    )
+    notificar_a_mecanicos_activos_por_orden(
+        db,
+        orden,
+        TipoNotificacion.ORDEN_ACTUALIZADA,
+        "Orden cancelada",
+        "La orden fue cancelada.",
+    )
     db.commit()
     db.refresh(orden)
     return orden
@@ -595,6 +642,27 @@ def completar_orden_manual(
         EstadoOrdenServicio.COMPLETADA,
         usuario_actual.id,
         observacion=observacion or "Orden completada manualmente",
+    )
+    notificar_a_conductor_por_orden(
+        db,
+        orden,
+        TipoNotificacion.ORDEN_ACTUALIZADA,
+        "Orden completada",
+        "Tu orden fue marcada como completada.",
+    )
+    notificar_a_taller_por_orden(
+        db,
+        orden,
+        TipoNotificacion.ORDEN_ACTUALIZADA,
+        "Orden completada",
+        "La orden fue marcada como completada.",
+    )
+    notificar_a_mecanicos_activos_por_orden(
+        db,
+        orden,
+        TipoNotificacion.ORDEN_ACTUALIZADA,
+        "Orden completada",
+        "La orden fue marcada como completada.",
     )
     recalcular_metrica_orden(db, orden)
     db.commit()

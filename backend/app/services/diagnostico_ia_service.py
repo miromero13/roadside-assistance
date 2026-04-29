@@ -1,7 +1,8 @@
 import json
-import base64
 import httpx
+import logging
 import os
+import mimetypes
 from decimal import Decimal
 from typing import Optional
 from datetime import datetime
@@ -18,16 +19,38 @@ from app.models.enums import EstadoOrdenServicio, TipoNotificacion
 from app.services.notificacion_service import notificar_a_taller_por_orden
 from app.services.taller_disponibilidad_service import calcular_distancia_km
 
+logger = logging.getLogger(__name__)
+
 try:
     import google.genai as genai
+    GENAI_IMPORT_ERROR = None
 except ImportError:
     genai = None
+    GENAI_IMPORT_ERROR = "google-genai no está instalado en el entorno activo"
 
 
 def _inicializar_gemini():
     """Inicializa el cliente de Gemini con la API key"""
-    if not genai or not settings.gemini_api_key:
+    api_key = _obtener_gemini_api_key()
+    logger.debug(
+        "Inicializando Gemini: import_ok=%s, api_key=%s, model=%s",
+        bool(genai),
+        "presente" if api_key else "ausente",
+        settings.gemini_model,
+    )
+
+    if not genai:
+        raise ValueError(GENAI_IMPORT_ERROR or "google-genai no disponible")
+
+    if not api_key:
         raise ValueError("Gemini API key not configured")
+
+
+def _obtener_gemini_api_key() -> str | None:
+    api_key = os.getenv("GEMINI_API_KEY") or settings.gemini_api_key
+    if isinstance(api_key, str):
+        api_key = api_key.strip()
+    return api_key or None
 
 
 def obtener_categorias_para_prompt(db: Session) -> str:
@@ -43,54 +66,66 @@ def obtener_categorias_para_prompt(db: Session) -> str:
     return formato
 
 
-def descargar_media_como_base64(url: str, tipo_media: str) -> str:
+def descargar_media_binaria(url: str) -> bytes | None:
     """
-    Descarga un archivo desde una URL y lo convierte a base64
+    Descarga un archivo desde una URL y devuelve su contenido binario.
 
     Args:
         url: URL del archivo
-        tipo_media: tipo de media (foto, audio, video)
-
     Returns:
-        String en base64
+        Bytes del archivo o None si falla
     """
     try:
         if url.startswith("/media/"):
-          ruta_local = url.lstrip("/")
-          if os.path.exists(ruta_local):
-              with open(ruta_local, "rb") as archivo:
-                  return base64.standard_b64encode(archivo.read()).decode("utf-8")
+            ruta_local = url.lstrip("/")
+            if os.path.exists(ruta_local):
+                with open(ruta_local, "rb") as archivo:
+                    return archivo.read()
 
         with httpx.Client() as client:
             response = client.get(url, timeout=30.0)
             response.raise_for_status()
-            return base64.standard_b64encode(response.content).decode('utf-8')
+            return response.content
     except Exception as e:
         print(f"Error descargando media {url}: {e}")
         return None
+
+
+def obtener_mime_type_media(url: str) -> str:
+    mime_type, _ = mimetypes.guess_type(url.split("?")[0])
+    if mime_type:
+        return mime_type
+    extension = url.rsplit(".", 1)[-1].lower()
+    if extension in {"m4a", "mp3", "wav", "flac", "aac"}:
+        return "audio/mpeg"
+    if extension in {"mp4", "mov", "mkv", "webm", "avi"}:
+        return "video/mp4"
+    return "image/jpeg"
 
 
 def construir_prompt_para_gemini(
     averia: Averia,
     medios: list[MedioAveria],
     categorias_str: str,
-) -> str:
+) -> list:
     """Construye el prompt para enviar a Gemini"""
 
     medios_info = []
-    medios_base64 = []
+    contenidos = []
 
     for i, medio in enumerate(medios, 1):
         tipo_display = "foto" if medio.tipo.value == "foto" else "audio" if medio.tipo.value == "audio" else "video"
         medios_info.append(f"{i}. {tipo_display.upper()}")
 
-        # Descargar y convertir a base64
-        b64 = descargar_media_como_base64(medio.url, medio.tipo.value)
-        if b64:
-            medios_base64.append({
-                "tipo": medio.tipo.value,
-                "data": b64[:2000]  # Limitar tamaño para prompt
-            })
+        if medio.tipo.value in {"foto", "audio"}:
+            contenido = descargar_media_binaria(medio.url)
+            if contenido:
+                contenidos.append(
+                    {
+                        "mime_type": obtener_mime_type_media(medio.url),
+                        "data": contenido,
+                    }
+                )
 
     medios_info_str = "\n".join(medios_info) if medios_info else "No hay medios adjuntos"
 
@@ -101,22 +136,23 @@ def construir_prompt_para_gemini(
         "critica": "CRÍTICA"
     }.get(averia.prioridad.value, averia.prioridad.value.upper())
 
-    prompt = f"""Eres un experto en diagnóstico de problemas vehiculares. Tu tarea es analizar los medios adjuntos (fotos, videos, audios) junto con la descripción del conductor para determinar qué está mal en el vehículo.
+    prompt = f"""Eres un experto en diagnóstico de problemas vehiculares. Tu tarea es analizar cualquier evidencia disponible (audio, imagen, video, texto y ubicación) para determinar qué está mal en el vehículo.
+
+Usa toda la información disponible. Si falta alguno de los campos, continúa con lo que tengas y genera un reporte útil.
 
 CATEGORÍAS DISPONIBLES:
 {categorias_str}
 
 INFORMACIÓN DE LA AVERÍA:
-- Descripción del conductor: {averia.descripcion_conductor}
-- Ubicación: {averia.direccion_averia or f"Latitud: {averia.latitud_averia}, Longitud: {averia.longitud_averia}"}
+- Descripción del conductor: {averia.descripcion_conductor or 'No proporcionada'}
+- Ubicación: {averia.direccion_averia or f'Latitud: {averia.latitud_averia}, Longitud: {averia.longitud_averia}'}
 - Prioridad reportada: {prioridad_texto}
 - Medios adjuntos: {medios_info_str}
 - Cantidad de archivos: {len(medios)}
 
-MEDIOS PARA ANALIZAR:
-{json.dumps([{"tipo": m["tipo"]} for m in medios_base64], ensure_ascii=False)}
+ANALIZA EL AUDIO si existe. Si el audio está presente, úsalo para complementar el diagnóstico aunque no haya descripción escrita.
 
-Tu análisis debe ser profundo y fundamentado. Proporciona tu respuesta en el siguiente formato JSON válido (solo JSON, sin markdown):
+    Tu análisis debe ser profundo y fundamentado. Proporciona tu respuesta en el siguiente formato JSON válido (solo JSON, sin markdown):
 
 {{
   "categoria": "nombre_de_categoria_o_incierto",
@@ -139,10 +175,22 @@ IMPORTANTE:
 - Si no puedes categorizar con confianza, usa "incierto"
 """
 
-    return prompt
+    partes: list = [prompt]
+    for contenido in contenidos:
+        if hasattr(genai, "types") and hasattr(genai.types, "Part"):
+            partes.append(
+                genai.types.Part.from_bytes(
+                    data=contenido["data"],
+                    mime_type=contenido["mime_type"],
+                )
+            )
+        else:
+            partes.append(f"[Imagen adjunta: {contenido['mime_type']}]")
+
+    return partes
 
 
-def llamar_gemini_para_diagnostico(prompt: str) -> Optional[dict]:
+def llamar_gemini_para_diagnostico(contents) -> Optional[dict]:
     """
     Llama a la API de Gemini para obtener el diagnóstico
 
@@ -151,11 +199,8 @@ def llamar_gemini_para_diagnostico(prompt: str) -> Optional[dict]:
     """
     try:
         _inicializar_gemini()
-        client = genai.Client(api_key=settings.gemini_api_key)
-        response = client.models.generate_content(
-            model=settings.gemini_model,
-            contents=prompt,
-        )
+        client = genai.Client(api_key=_obtener_gemini_api_key())
+        response = client.models.generate_content(model=settings.gemini_model, contents=contents)
 
         if not response.text:
             return None
@@ -175,7 +220,7 @@ def llamar_gemini_para_diagnostico(prompt: str) -> Optional[dict]:
         print(f"Error parseando respuesta JSON de Gemini: {e}")
         return None
     except Exception as e:
-        print(f"Error llamando a Gemini: {e}")
+        logger.exception("Error llamando a Gemini")
         return None
 
 
@@ -270,7 +315,7 @@ def crear_orden_automatica_desde_diagnostico(
     """
 
     if not diagnostico_ia.categoria_id:
-        print(f"No hay categoría para la avería {averia.id}")
+        logger.warning("No hay categoría para la avería %s", averia.id)
         return None
 
     # Buscar servicios disponibles para esta categoría
@@ -282,7 +327,9 @@ def crear_orden_automatica_desde_diagnostico(
     ).scalars().all()
 
     if not servicios:
-        print(f"No hay talleres que ofrezcan la categoría {diagnostico_ia.categoria_id}")
+        logger.warning(
+            "No hay talleres que ofrezcan la categoría %s", diagnostico_ia.categoria_id
+        )
         return None
 
     # Encontrar el taller más cercano y disponible
@@ -312,7 +359,7 @@ def crear_orden_automatica_desde_diagnostico(
             mejor_distancia = distancia
 
     if not mejor_taller:
-        print(f"No hay talleres disponibles en cobertura para avería {averia.id}")
+        logger.warning("No hay talleres disponibles en cobertura para avería %s", averia.id)
         return None
 
     # Crear la orden
@@ -338,7 +385,7 @@ def crear_orden_automatica_desde_diagnostico(
             f"Se creó automáticamente una orden basada en diagnóstico de IA: {diagnostico_ia.resumen_automatico or 'Revisión necesaria'}",
         )
     except Exception as e:
-        print(f"Error notificando taller: {e}")
+        logger.exception("Error notificando taller")
 
     db.commit()
     db.refresh(orden)
@@ -384,10 +431,10 @@ def procesar_averia_con_ia(
 
         # Construir prompt
         categorias_str = obtener_categorias_para_prompt(db)
-        prompt = construir_prompt_para_gemini(averia, medios, categorias_str)
+        contents = construir_prompt_para_gemini(averia, medios, categorias_str)
 
         # Llamar a Gemini
-        respuesta = llamar_gemini_para_diagnostico(prompt)
+        respuesta = llamar_gemini_para_diagnostico(contents)
 
         if not respuesta:
             raise ValueError("No se pudo obtener respuesta de Gemini")
@@ -407,7 +454,7 @@ def procesar_averia_con_ia(
         return diagnostico, orden
 
     except Exception as e:
-        print(f"Error procesando avería con IA: {e}")
+        logger.exception("Error procesando avería con IA")
         # Mantener en ANALIZANDO para que se reintente después
         db.rollback()
         raise
